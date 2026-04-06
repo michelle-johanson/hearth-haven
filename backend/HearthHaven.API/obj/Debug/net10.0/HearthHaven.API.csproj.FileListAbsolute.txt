@@ -1,0 +1,9 @@
+C:\Users\sabri\INTEX\hearth-haven\backend\HearthHaven.API\obj\Debug\net10.0\HearthHaven.API.csproj.AssemblyReference.cache
+C:\Users\sabri\INTEX\hearth-haven\backend\HearthHaven.API\obj\Debug\net10.0\rpswa.dswa.cache.json
+C:\Users\sabri\INTEX\hearth-haven\backend\HearthHaven.API\obj\Debug\net10.0\HearthHaven.API.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\sabri\INTEX\hearth-haven\backend\HearthHaven.API\obj\Debug\net10.0\HearthHaven.API.AssemblyInfoInputs.cache
+C:\Users\sabri\INTEX\hearth-haven\backend\HearthHaven.API\obj\Debug\net10.0\HearthHaven.API.AssemblyInfo.cs
+C:\Users\sabri\INTEX\hearth-haven\backend\HearthHaven.API\obj\Debug\net10.0\HearthHaven.API.csproj.CoreCompileInputs.cache
+C:\Users\sabri\INTEX\hearth-haven\backend\HearthHaven.API\obj\Debug\net10.0\HearthHaven.API.MvcApplicationPartsAssemblyInfo.cs
+C:\Users\sabri\INTEX\hearth-haven\backend\HearthHaven.API\obj\Debug\net10.0\HearthHaven.API.MvcApplicationPartsAssemblyInfo.cache
+C:\Users\sabri\INTEX\hearth-haven\backend\HearthHaven.API\obj\Debug\net10.0\HearthHaven.API.sourcelink.json
