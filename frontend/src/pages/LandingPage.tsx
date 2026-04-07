@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 function LandingPage() {
   return (
     <div>
@@ -141,7 +143,9 @@ function LandingPage() {
 
           <div className="cta-buttons">
             <button className="cta-primary">
-              Donate Now →
+              <Link to="/donate" style={{ color: 'inherit', textDecoration: 'none' }}>
+                Donate Now →
+              </Link>
             </button>
 
             <button className="cta-secondary">
