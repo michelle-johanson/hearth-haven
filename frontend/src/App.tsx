@@ -71,15 +71,28 @@ function App() {
           <Route path="/cases" element={<CasePage />} />
           <Route path="/cases/:id" element={<ResidentDetailPage />} />
           <Route path="/donate" element={<DonatePage />} />
-          <Route path="/donors" element={<DonorsPage />} />
           <Route path="/outreach" element={<OutreachPage />} />
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/teapot" element={<TeapotPage />} />
 
           <Route path="/impact" element={<ImpactDashboard />} />
-          <Route path="/donors" element={<ProtectedRoute><DonorsPage /></ProtectedRoute>} />
-          <Route path="/allocations" element={<ProtectedRoute><AllocationPage /></ProtectedRoute>} />
+          <Route
+            path="/donors"
+            element={(
+              <ProtectedRoute>
+                <DonorsPage />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/allocations"
+            element={(
+              <ProtectedRoute>
+                <AllocationPage />
+              </ProtectedRoute>
+            )}
+          />
         </Routes>
       </main>
 
