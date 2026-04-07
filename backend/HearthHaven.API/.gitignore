@@ -1,12 +1,21 @@
-# .NET Core
+# .NET build output
 bin/
 obj/
 
-# Node
-node_modules/
+# User-specific / IDE files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+.idea/
 
-# Security
+# macOS
+.DS_Store
+
+# Environment / secrets
+.env
 appsettings.Development.json
 
-# Mac OS
-.DS_Store
+# Node
+node_modules/

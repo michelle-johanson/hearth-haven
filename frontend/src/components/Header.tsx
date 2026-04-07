@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -8,7 +8,6 @@ function Header() {
     <>
       <nav className="navbar">
         <div className="nav-container">
-
           {/* LEFT — Logo */}
           <Link className="nav-logo" to="/">
             <img src="/Logo.svg" alt="Hearth Haven logo" />
@@ -50,7 +49,6 @@ function Header() {
             <span />
             <span />
           </button>
-
         </div>
       </nav>
 
