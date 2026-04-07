@@ -1,0 +1,12 @@
+# .NET Core
+bin/
+obj/
+
+# Node
+node_modules/
+
+# Security
+appsettings.Development.json
+
+# Mac OS
+.DS_Store
