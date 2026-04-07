@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 
 import Header from './components/Header';
@@ -10,6 +10,7 @@ import RegisterPage from './pages/RegisterPage';
 import CasePage from './pages/CasePage';
 import DonatePage from "./pages/DonatePage";
 import DonorsPage from "./pages/DonorPage";
+import { AuthService } from "./api/AuthService";
 
 function ScrollToHash() {
   const location = useLocation();
@@ -30,10 +31,24 @@ function ScrollToHash() {
 }
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(AuthService.isAuthenticated());
+
+  useEffect(() => {
+    const syncAuthState = () => setIsAuthenticated(AuthService.isAuthenticated());
+
+    window.addEventListener("auth-change", syncAuthState);
+    window.addEventListener("storage", syncAuthState);
+
+    return () => {
+      window.removeEventListener("auth-change", syncAuthState);
+      window.removeEventListener("storage", syncAuthState);
+    };
+  }, []);
+
   return (
     <>
       <ScrollToHash />
-      <Header />
+      <Header isAuthenticated={isAuthenticated} />
 
       <main>
         <Routes>

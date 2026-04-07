@@ -1,7 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-function Header() {
+type HeaderProps = {
+  isAuthenticated: boolean;
+};
+
+function Header({ isAuthenticated }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
@@ -30,13 +34,17 @@ function Header() {
               <button className="btn-donate">Donate</button>
             </Link>
 
-            <Link to="/login">
-              <button className="btn-light">Sign in</button>
-            </Link>
+            {!isAuthenticated && (
+              <>
+                <Link to="/login">
+                  <button className="btn-light">Sign in</button>
+                </Link>
 
-            <Link to="/register">
-              <button className="btn-dark">Register</button>
-            </Link>
+                <Link to="/register">
+                  <button className="btn-dark">Register</button>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* HAMBURGER — mobile only */}
@@ -68,13 +76,17 @@ function Header() {
               <button className="btn-donate">Donate</button>
             </Link>
 
-          <Link to="/login" onClick={() => setMenuOpen(false)}>
-            <button className="btn-light">Sign in</button>
-          </Link>
+          {!isAuthenticated && (
+            <>
+              <Link to="/login" onClick={() => setMenuOpen(false)}>
+                <button className="btn-light">Sign in</button>
+              </Link>
 
-          <Link to="/register" onClick={() => setMenuOpen(false)}>
-            <button className="btn-dark">Register</button>
-          </Link>
+              <Link to="/register" onClick={() => setMenuOpen(false)}>
+                <button className="btn-dark">Register</button>
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </>

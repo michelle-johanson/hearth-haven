@@ -1,56 +1,41 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import React from 'react';
+import { AuthService } from '../api/AuthService';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const registrationSuccessMessage = (location.state as { registered?: boolean } | null)?.registered
+    ? 'Account created successfully. Please sign in.'
+    : '';
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [step, setStep] = useState<'form' | 'confirm'>('form');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [success] = useState(registrationSuccessMessage);
 
-  function handleNext(e: React.FormEvent) {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setStep('confirm');
-  }
+    setError('');
 
-  function handleConfirm() {
-    // TODO: call login API
-    console.log('Login:', { email });
-  }
+    try {
+      const response = await AuthService.login(email, password);
 
-  if (step === 'confirm') {
-    return (
-      <div className="auth-page">
-        <div className="auth-container">
-          <div className="auth-left">
-            <h1>Welcome Back</h1>
-            <p>Continue your journey of restoring hope and rebuilding lives.</p>
-          </div>
-
-          <div className="auth-box">
-            <h2>Confirm Sign In</h2>
-            <p style={{ color: '#6b7280', fontSize: 14, marginBottom: 24 }}>
-              You're signing in with the following account.
-            </p>
-
-            <div className="auth-confirm-rows">
-              <div className="auth-confirm-row">
-                <span>Email</span>
-                <span>{email}</span>
-              </div>
-              <div className="auth-confirm-row">
-                <span>Password</span>
-                <span>••••••••</span>
-              </div>
-            </div>
-
-            <button className="auth-submit" onClick={handleConfirm}>Confirm &amp; Sign In</button>
-            <button className="auth-back" onClick={() => setStep('form')}>← Back</button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+      if (response.ok) {
+        AuthService.setAuthenticated(true);
+        navigate('/');
+      } else {
+        const data = await response.json();
+        const message = data?.message || data?.Message || 'Invalid email or password.';
+        setError(message);
+      }
+    } catch {
+      setError('Network error. Is the backend running?');
+    }
+  };
 
   return (
     <div className="auth-page">
@@ -63,7 +48,10 @@ const LoginPage: React.FC = () => {
         <div className="auth-box">
           <h2>Sign In</h2>
 
-          <form className="auth-form" onSubmit={handleNext}>
+          {success && <p style={{ color: 'green', marginBottom: '10px' }}>{success}</p>}
+          {error && <p style={{ color: 'red', marginBottom: '10px' }}>{error}</p>}
+
+          <form className="auth-form" onSubmit={handleLogin}>
             <input
               type="email"
               placeholder="Email Address"
@@ -71,19 +59,28 @@ const LoginPage: React.FC = () => {
               onChange={e => setEmail(e.target.value)}
               required
             />
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-            />
-            <button className="auth-submit" type="submit">Next →</button>
+            <div className="auth-password-field">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                className="auth-toggle-password"
+                onClick={() => setShowPassword((current) => !current)}
+              >
+                {showPassword ? 'Hide' : 'Show'}
+              </button>
+            </div>
+            <button className="auth-submit" type="submit">Sign In</button>
           </form>
 
           <p className="auth-switch">
             Don't have an account?{' '}
-            <span onClick={() => navigate('/register')}>Register</span>
+            <span onClick={() => navigate('/register')} style={{ cursor: 'pointer', color: 'blue' }}>Register</span>
           </p>
         </div>
       </div>

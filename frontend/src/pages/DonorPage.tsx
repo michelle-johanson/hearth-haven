@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { AuthService } from '../api/AuthService';
 import { Supporter, Contribution, DonorFilterOptions, SupporterFilters, ContributionFilters } from '../types/Donor';
 import {
   fetchSupporters,
@@ -189,9 +190,7 @@ const contributionRequired: { key: keyof Contribution; label: string }[] = [
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function DonorPage() {
-  // ── DEV ONLY ────────────────────────────────────────────────────────────────
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  // ────────────────────────────────────────────────────────────────────────────
+  const isLoggedIn = AuthService.isAuthenticated();
 
   const [activeTab, setActiveTab] = useState<'supporters' | 'contributions'>('supporters');
 
@@ -456,18 +455,6 @@ export default function DonorPage() {
 
   return (
     <>
-      {/* ── DEV TOGGLE ──────────────────────────────────────────────────────── */}
-      <div className="dev-toggle-bar">
-        <span>🛠 DEV</span>
-        <button
-          className={`dev-toggle-btn${isLoggedIn ? ' on' : ''}`}
-          onClick={() => setIsLoggedIn((v) => !v)}
-        >
-          Logged In: {isLoggedIn ? 'ON ✓' : 'OFF'}
-        </button>
-        <span style={{ fontSize: 11, color: '#9ca3af' }}>Remove before deploying</span>
-      </div>
-
       {!isLoggedIn ? accessDeniedScreen : (
         <div className="case-layout">
 

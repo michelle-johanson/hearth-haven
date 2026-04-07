@@ -999,6 +999,30 @@ body,
   font-size: 14px;
 }
 
+.auth-password-field {
+  position: relative;
+}
+
+.auth-password-field input {
+  width: 100%;
+  padding-right: 68px;
+  box-sizing: border-box;
+}
+
+.auth-toggle-password {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  color: #d97706;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 6px;
+}
+
 .auth-submit {
   margin-top: 10px;
   background: linear-gradient(135deg, #e89b7a, #d97757);

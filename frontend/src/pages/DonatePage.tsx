@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AuthService } from '../api/AuthService';
 import './DonatePage.css';
 
 const AMOUNTS: number[] = [10, 25, 50, 100, 250, 500];
@@ -11,13 +12,9 @@ type DonationType = 'monetary'  | 'inkind' | 'volunteer';
 type PayMethod    = 'card'      | 'paypal';
 
 function DonatePage() {
-  // ── DEV ONLY: remove before deploying ───────────────────────────────────
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  // ────────────────────────────────────────────────────────────────────────
-
   const navigate = useNavigate();
+  const isLoggedIn = AuthService.isAuthenticated();
 
-  const [step,         setStep]         = useState<'form' | 'confirm'>('form');
   const [authMode,     setAuthMode]     = useState<AuthMode>('anonymous');
   const [donorType,    setDonorType]    = useState<DonorType>('individual');
   const [donationType, setDonationType] = useState<DonationType>('monetary');
@@ -46,38 +43,11 @@ function DonatePage() {
     }
   }
 
-  function handleNext(e: React.MouseEvent) {
-    e.preventDefault();
-    setStep('confirm');
-  }
-
   function handleSubmit(e: React.MouseEvent) {
     e.preventDefault();
-    const payload = {
-      supporter: {
-        supporter_type:
-          authMode === 'anonymous' ? 'Anonymous'
-          : donorType === 'organization' ? 'Corporate' : 'Individual',
-        first_name: form.firstName,
-        last_name: form.lastName,
-        email: form.email,
-        organization_name: donorType === 'organization' ? form.organizationName : null,
-        status: 'Active',
-      },
-      donation: {
-        donation_type:
-          donationType === 'monetary' ? 'Monetary'
-          : donationType === 'inkind' ? 'InKind' : 'Volunteer',
-        is_recurring: frequency === 'monthly',
-        currency_code: 'PHP',
-        amount: donationType === 'monetary' ? finalAmount : null,
-        estimated_value: donationType === 'monetary' ? finalAmount : null,
-        channel_source: payMethod === 'card' ? 'Card' : 'PayPal',
-        notes,
-      },
-    };
-    console.log('SEND TO BACKEND:', payload);
-    alert('Check console → payload ready for DB ✅');
+    alert(
+      `Donation details are ready for submission: ${donationType} donation for ${finalAmount || 'an unspecified amount'}.`
+    );
   }
 
   const showPayment      = donationType === 'monetary';
@@ -85,18 +55,6 @@ function DonatePage() {
 
   return (
     <div className="donate-page">
-
-      {/* ── DEV TOGGLE ───────────────────────────────────────────────────── */}
-      <div className="dev-toggle-bar">
-        <span>🛠 DEV</span>
-        <button
-          className={`dev-toggle-btn${isLoggedIn ? ' on' : ''}`}
-          onClick={() => setIsLoggedIn(v => !v)}
-        >
-          Logged In: {isLoggedIn ? 'ON ✓' : 'OFF'}
-        </button>
-        <span style={{ fontSize: 11, color: '#9ca3af' }}>Remove before deploying</span>
-      </div>
 
       {/* ── HERO — toggle lives here now ─────────────────────────────────── */}
       <div className="donate-hero">
