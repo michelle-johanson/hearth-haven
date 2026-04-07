@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { AuthService } from '../api/AuthService';
 
 type HeaderProps = {
   isAuthenticated: boolean;
@@ -7,6 +8,13 @@ type HeaderProps = {
 
 function Header({ isAuthenticated }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await AuthService.logout();
+    setMenuOpen(false);
+    navigate('/');
+  };
 
   return (
     <>
@@ -24,8 +32,7 @@ function Header({ isAuthenticated }: HeaderProps) {
             <Link to="/analytics">Analytics</Link>
             <Link to="/cases">Case Management</Link>
             <Link to="/donors">Donors</Link>
-            <Link to="/safehouses">Safehouses</Link>
-            <Link to="/#contact">Contact</Link>
+            <Link to="/outreach">Outreach</Link>
           </div>
 
           {/* RIGHT — Desktop action buttons */}
@@ -44,6 +51,10 @@ function Header({ isAuthenticated }: HeaderProps) {
                   <button className="btn-dark">Register</button>
                 </Link>
               </>
+            )}
+
+            {isAuthenticated && (
+              <button className="btn-light" onClick={handleLogout}>Logout</button>
             )}
           </div>
 
@@ -66,8 +77,7 @@ function Header({ isAuthenticated }: HeaderProps) {
         <Link to="/analytics" onClick={() => setMenuOpen(false)}>Analytics</Link>
         <Link to="/cases" onClick={() => setMenuOpen(false)}>Case Management</Link>
         <Link to="/donors" onClick={() => setMenuOpen(false)}>Donors</Link>
-        <Link to="/safehouses" onClick={() => setMenuOpen(false)}>Safehouses</Link>
-        <Link to="/#contact" onClick={() => setMenuOpen(false)}>Contact</Link>
+        <Link to="/outreach" onClick={() => setMenuOpen(false)}>Outreach</Link>
 
         <hr className="mobile-menu-divider" />
 
@@ -86,6 +96,10 @@ function Header({ isAuthenticated }: HeaderProps) {
                 <button className="btn-dark">Register</button>
               </Link>
             </>
+          )}
+
+          {isAuthenticated && (
+            <button className="btn-light" onClick={handleLogout}>Logout</button>
           )}
         </div>
       </div>

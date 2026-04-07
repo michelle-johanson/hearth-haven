@@ -12,6 +12,11 @@ import ResidentDetailPage from './pages/ResidentDetailPage';
 import DonatePage from "./pages/DonatePage";
 import DonorsPage from "./pages/DonorPage";
 import { AuthService } from "./api/AuthService";
+import OutreachPage from "./pages/OutreachPage";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
+import TermsPage from "./pages/TermsPage";
+import TeapotPage from "./pages/TeapotPage";
+import CookieConsentBanner from "./components/CookieConsentBanner";
 
 function ScrollToHash() {
   const location = useLocation();
@@ -50,6 +55,7 @@ function App() {
     <>
       <ScrollToHash />
       <Header isAuthenticated={isAuthenticated} />
+      <CookieConsentBanner />
 
       <main>
         <Routes>
@@ -60,6 +66,10 @@ function App() {
           <Route path="/cases/:id" element={<ResidentDetailPage />} />
           <Route path="/donate" element={<DonatePage />} />
           <Route path="/donors" element={<DonorsPage />} />
+          <Route path="/outreach" element={<OutreachPage />} />
+          <Route path="/privacy" element={<PrivacyPolicyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/teapot" element={<TeapotPage />} />
 
         </Routes>
       </main>
