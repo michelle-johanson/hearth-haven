@@ -151,12 +151,12 @@ function DonatePage() {
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <label className="block">
                     <span className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">First Name</span>
-                    <input name="firstName" value={form.firstName} onChange={handleInput} className={`input-field ${isLoggedIn ? 'bg-gray-50 dark:bg-gray-800/50' : ''}`} readOnly={isLoggedIn} />
+                    <input name="firstName" value={form.firstName} onChange={handleInput} className={`input-field ${isLoggedIn ? 'bg-gray-50 dark:bg-gray-800/50' : ''}`}/>
                     {errors.firstName && <p className="mt-1 text-xs text-red-500">{errors.firstName}</p>}
                   </label>
                   <label className="block">
                     <span className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Last Name</span>
-                    <input name="lastName" value={form.lastName} onChange={handleInput} className={`input-field ${isLoggedIn ? 'bg-gray-50 dark:bg-gray-800/50' : ''}`} readOnly={isLoggedIn} />
+                    <input name="lastName" value={form.lastName} onChange={handleInput} className={`input-field ${isLoggedIn ? 'bg-gray-50 dark:bg-gray-800/50' : ''}`}/>
                     {errors.lastName && <p className="mt-1 text-xs text-red-500">{errors.lastName}</p>}
                   </label>
                 </div>

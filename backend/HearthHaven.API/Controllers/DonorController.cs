@@ -169,4 +169,45 @@ public class DonorController : ControllerBase
             totalPages,
         });
     }
+
+    // ✅ UPDATE donor
+    // PUT /Donor/{id}
+    [HttpPut("{id}")]
+public IActionResult UpdateDonor(int id, [FromBody] Dictionary<string, object> updated)
+{
+    var donor = _db.Supporters.FirstOrDefault(s => s.SupporterId == id);
+
+    if (donor == null)
+        return NotFound();
+
+    if (updated.ContainsKey("firstName"))
+        donor.FirstName = updated["firstName"]?.ToString();
+
+    if (updated.ContainsKey("lastName"))
+        donor.LastName = updated["lastName"]?.ToString();
+
+    if (updated.ContainsKey("email"))
+        donor.Email = updated["email"]?.ToString();
+
+    _db.SaveChanges();
+
+    return Ok(donor);
+}
+
+    [HttpDelete("{id}")]
+        public IActionResult DeleteDonor(int id)
+        {
+            var donor = _db.Supporters.FirstOrDefault(s => s.SupporterId == id);
+
+            if (donor == null)
+                return NotFound();
+
+            // ✅ SOFT DELETE instead of hard delete
+            donor.Status = "Inactive";
+
+            _db.SaveChanges();
+
+            return Ok();
+        }
+    
 }

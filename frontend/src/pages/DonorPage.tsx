@@ -265,12 +265,19 @@ export default function DonorPage() {
 
   // ── Load data when tab / page / filters change ───────────────────────────
   const loadData = () => {
+
     if (!isLoggedIn) return;
     setLoading(true);
     setError(null);
     if (activeTab === 'supporters') {
       fetchSupporters(page, pageSize, supporterFilters)
-        .then((res) => { setSupporters(res.data); setTotalPages(res.totalPages); setTotalCount(res.totalCount); })
+        .then((res) => {
+          console.log("Supporters from API:", res.data); // 👈 ADD THIS LINE
+          setSupporters(res.data);
+          setTotalPages(res.totalPages);
+          setTotalCount(res.totalCount);
+        })
+                
         .catch((e) => setError(e.message))
         .finally(() => setLoading(false));
     } else {
@@ -350,6 +357,7 @@ export default function DonorPage() {
   };
   const handleDeleteSupporter = async () => {
     if (!selectedSupporter || !window.confirm('Delete this supporter profile?')) return;
+    console.log("Deleting supporter ID:", selectedSupporter?.supporterId);
     setSaving(true);
     try { await deleteSupporter(selectedSupporter.supporterId); closeSupporter(); loadData(); }
     catch (e) { alert(e instanceof Error ? e.message : 'Failed to delete'); }
