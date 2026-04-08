@@ -896,17 +896,19 @@ export default function ResidentDetailPage() {
 
   const renderHealthTab = () => (
     <>
-      <div className="flex flex-wrap items-center gap-3 rounded-lg bg-gray-50 dark:bg-gray-800 p-3 mb-4">
-        <Filter size={16} className="text-gray-400" />
-        <DateRange from={healthFilters.dateFrom} to={healthFilters.dateTo}
-          onChange={(f, t) => { setHealthFilters((p) => ({ ...p, dateFrom: f, dateTo: t })); setHealthPage(1); }} />
-        <BoolSelect label="Medical" value={healthFilters.medicalCheckupDone}
-          onChange={(v) => { setHealthFilters((p) => ({ ...p, medicalCheckupDone: v })); setHealthPage(1); }} />
-        <BoolSelect label="Dental" value={healthFilters.dentalCheckupDone}
-          onChange={(v) => { setHealthFilters((p) => ({ ...p, dentalCheckupDone: v })); setHealthPage(1); }} />
-        <BoolSelect label="Psychological" value={healthFilters.psychologicalCheckupDone}
-          onChange={(v) => { setHealthFilters((p) => ({ ...p, psychologicalCheckupDone: v })); setHealthPage(1); }} />
-        <button className="btn-primary ml-auto"
+      <div className="mb-4 flex items-start gap-3">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3 p-3">
+          <Filter size={16} className="shrink-0 text-gray-400" />
+          <DateRange from={healthFilters.dateFrom} to={healthFilters.dateTo}
+            onChange={(f, t) => { setHealthFilters((p) => ({ ...p, dateFrom: f, dateTo: t })); setHealthPage(1); }} />
+          <BoolSelect label="Medical" value={healthFilters.medicalCheckupDone}
+            onChange={(v) => { setHealthFilters((p) => ({ ...p, medicalCheckupDone: v })); setHealthPage(1); }} />
+          <BoolSelect label="Dental" value={healthFilters.dentalCheckupDone}
+            onChange={(v) => { setHealthFilters((p) => ({ ...p, dentalCheckupDone: v })); setHealthPage(1); }} />
+          <BoolSelect label="Psychological" value={healthFilters.psychologicalCheckupDone}
+            onChange={(v) => { setHealthFilters((p) => ({ ...p, psychologicalCheckupDone: v })); setHealthPage(1); }} />
+        </div>
+        <button className="btn-primary shrink-0"
           onClick={() => openRecordCreate('health', { recordDate: new Date().toISOString().slice(0, 10), medicalCheckupDone: false, dentalCheckupDone: false, psychologicalCheckupDone: false })}>
           <Plus size={16} />
           Add Health Record
@@ -941,25 +943,27 @@ export default function ResidentDetailPage() {
 
   const renderEducationTab = () => (
     <>
-      <div className="flex flex-wrap items-center gap-3 rounded-lg bg-gray-50 dark:bg-gray-800 p-3 mb-4">
-        <Filter size={16} className="text-gray-400" />
-        <DateRange from={eduFilters.dateFrom} to={eduFilters.dateTo}
-          onChange={(f, t) => { setEduFilters((p) => ({ ...p, dateFrom: f, dateTo: t })); setEduPage(1); }} />
-        {eduFilterOpts && <>
-          <select className="select-field max-w-[160px]" value={eduFilters.educationLevel || ''} onChange={(e) => { setEduFilters((p) => ({ ...p, educationLevel: e.target.value || undefined })); setEduPage(1); }}>
-            <option value="">All Levels</option>
-            {eduFilterOpts.educationLevels.map((o) => <option key={o} value={o}>{o}</option>)}
-          </select>
-          <select className="select-field max-w-[160px]" value={eduFilters.enrollmentStatus || ''} onChange={(e) => { setEduFilters((p) => ({ ...p, enrollmentStatus: e.target.value || undefined })); setEduPage(1); }}>
-            <option value="">All Enrollment</option>
-            {eduFilterOpts.enrollmentStatuses.map((o) => <option key={o} value={o}>{o}</option>)}
-          </select>
-          <select className="select-field max-w-[160px]" value={eduFilters.completionStatus || ''} onChange={(e) => { setEduFilters((p) => ({ ...p, completionStatus: e.target.value || undefined })); setEduPage(1); }}>
-            <option value="">All Completion</option>
-            {eduFilterOpts.completionStatuses.map((o) => <option key={o} value={o}>{o}</option>)}
-          </select>
-        </>}
-        <button className="btn-primary ml-auto"
+      <div className="mb-4 flex items-start gap-3">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3 p-3">
+          <Filter size={16} className="shrink-0 text-gray-400" />
+          <DateRange from={eduFilters.dateFrom} to={eduFilters.dateTo}
+            onChange={(f, t) => { setEduFilters((p) => ({ ...p, dateFrom: f, dateTo: t })); setEduPage(1); }} />
+          {eduFilterOpts && <>
+            <select className="select-field max-w-[160px]" value={eduFilters.educationLevel || ''} onChange={(e) => { setEduFilters((p) => ({ ...p, educationLevel: e.target.value || undefined })); setEduPage(1); }}>
+              <option value="">All Levels</option>
+              {eduFilterOpts.educationLevels.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+            <select className="select-field max-w-[160px]" value={eduFilters.enrollmentStatus || ''} onChange={(e) => { setEduFilters((p) => ({ ...p, enrollmentStatus: e.target.value || undefined })); setEduPage(1); }}>
+              <option value="">All Enrollment</option>
+              {eduFilterOpts.enrollmentStatuses.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+            <select className="select-field max-w-[160px]" value={eduFilters.completionStatus || ''} onChange={(e) => { setEduFilters((p) => ({ ...p, completionStatus: e.target.value || undefined })); setEduPage(1); }}>
+              <option value="">All Completion</option>
+              {eduFilterOpts.completionStatuses.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </>}
+        </div>
+        <button className="btn-primary shrink-0"
           onClick={() => openRecordCreate('education', { recordDate: new Date().toISOString().slice(0, 10), attendanceRate: 0, progressPercent: 0 })}>
           <Plus size={16} />
           Add Education Record
@@ -992,23 +996,25 @@ export default function ResidentDetailPage() {
 
   const renderIncidentsTab = () => (
     <>
-      <div className="flex flex-wrap items-center gap-3 rounded-lg bg-gray-50 dark:bg-gray-800 p-3 mb-4">
-        <Filter size={16} className="text-gray-400" />
-        <DateRange from={incFilters.dateFrom} to={incFilters.dateTo}
-          onChange={(f, t) => { setIncFilters((p) => ({ ...p, dateFrom: f, dateTo: t })); setIncPage(1); }} />
-        {incFilterOpts && <>
-          <select className="select-field max-w-[160px]" value={incFilters.incidentType || ''} onChange={(e) => { setIncFilters((p) => ({ ...p, incidentType: e.target.value || undefined })); setIncPage(1); }}>
-            <option value="">All Types</option>
-            {incFilterOpts.incidentTypes.map((o) => <option key={o} value={o}>{o}</option>)}
-          </select>
-          <select className="select-field max-w-[160px]" value={incFilters.severity || ''} onChange={(e) => { setIncFilters((p) => ({ ...p, severity: e.target.value || undefined })); setIncPage(1); }}>
-            <option value="">All Severities</option>
-            {incFilterOpts.severities.map((o) => <option key={o} value={o}>{o}</option>)}
-          </select>
-        </>}
-        <BoolSelect label="Resolved" value={incFilters.resolved}
-          onChange={(v) => { setIncFilters((p) => ({ ...p, resolved: v })); setIncPage(1); }} />
-        <button className="btn-primary ml-auto"
+      <div className="mb-4 flex items-start gap-3">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3 p-3">
+          <Filter size={16} className="shrink-0 text-gray-400" />
+          <DateRange from={incFilters.dateFrom} to={incFilters.dateTo}
+            onChange={(f, t) => { setIncFilters((p) => ({ ...p, dateFrom: f, dateTo: t })); setIncPage(1); }} />
+          {incFilterOpts && <>
+            <select className="select-field max-w-[160px]" value={incFilters.incidentType || ''} onChange={(e) => { setIncFilters((p) => ({ ...p, incidentType: e.target.value || undefined })); setIncPage(1); }}>
+              <option value="">All Types</option>
+              {incFilterOpts.incidentTypes.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+            <select className="select-field max-w-[160px]" value={incFilters.severity || ''} onChange={(e) => { setIncFilters((p) => ({ ...p, severity: e.target.value || undefined })); setIncPage(1); }}>
+              <option value="">All Severities</option>
+              {incFilterOpts.severities.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </>}
+          <BoolSelect label="Resolved" value={incFilters.resolved}
+            onChange={(v) => { setIncFilters((p) => ({ ...p, resolved: v })); setIncPage(1); }} />
+        </div>
+        <button className="btn-primary shrink-0"
           onClick={() => openRecordCreate('incidents', { incidentDate: new Date().toISOString().slice(0, 10), safehouseId: resident?.safehouseId, resolved: false, followUpRequired: false })}>
           <Plus size={16} />
           Report Incident
@@ -1047,27 +1053,29 @@ export default function ResidentDetailPage() {
 
   const renderVisitationsTab = () => (
     <>
-      <div className="flex flex-wrap items-center gap-3 rounded-lg bg-gray-50 dark:bg-gray-800 p-3 mb-4">
-        <Filter size={16} className="text-gray-400" />
-        <DateRange from={visFilters.dateFrom} to={visFilters.dateTo}
-          onChange={(f, t) => { setVisFilters((p) => ({ ...p, dateFrom: f, dateTo: t })); setVisPage(1); }} />
-        {visFilterOpts && <>
-          <select className="select-field max-w-[160px]" value={visFilters.visitType || ''} onChange={(e) => { setVisFilters((p) => ({ ...p, visitType: e.target.value || undefined })); setVisPage(1); }}>
-            <option value="">All Types</option>
-            {visFilterOpts.visitTypes.map((o) => <option key={o} value={o}>{o}</option>)}
-          </select>
-          <select className="select-field max-w-[160px]" value={visFilters.familyCooperationLevel || ''} onChange={(e) => { setVisFilters((p) => ({ ...p, familyCooperationLevel: e.target.value || undefined })); setVisPage(1); }}>
-            <option value="">All Cooperation</option>
-            {visFilterOpts.cooperationLevels.map((o) => <option key={o} value={o}>{o}</option>)}
-          </select>
-          <select className="select-field max-w-[160px]" value={visFilters.socialWorker || ''} onChange={(e) => { setVisFilters((p) => ({ ...p, socialWorker: e.target.value || undefined })); setVisPage(1); }}>
-            <option value="">All Workers</option>
-            {visFilterOpts.socialWorkers.map((o) => <option key={o} value={o}>{o}</option>)}
-          </select>
-        </>}
-        <BoolSelect label="Safety Concerns" value={visFilters.safetyConcernsNoted}
-          onChange={(v) => { setVisFilters((p) => ({ ...p, safetyConcernsNoted: v })); setVisPage(1); }} />
-        <button className="btn-primary ml-auto"
+      <div className="mb-4 flex items-start gap-3">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3 p-3">
+          <Filter size={16} className="shrink-0 text-gray-400" />
+          <DateRange from={visFilters.dateFrom} to={visFilters.dateTo}
+            onChange={(f, t) => { setVisFilters((p) => ({ ...p, dateFrom: f, dateTo: t })); setVisPage(1); }} />
+          {visFilterOpts && <>
+            <select className="select-field max-w-[160px]" value={visFilters.visitType || ''} onChange={(e) => { setVisFilters((p) => ({ ...p, visitType: e.target.value || undefined })); setVisPage(1); }}>
+              <option value="">All Types</option>
+              {visFilterOpts.visitTypes.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+            <select className="select-field max-w-[160px]" value={visFilters.familyCooperationLevel || ''} onChange={(e) => { setVisFilters((p) => ({ ...p, familyCooperationLevel: e.target.value || undefined })); setVisPage(1); }}>
+              <option value="">All Cooperation</option>
+              {visFilterOpts.cooperationLevels.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+            <select className="select-field max-w-[160px]" value={visFilters.socialWorker || ''} onChange={(e) => { setVisFilters((p) => ({ ...p, socialWorker: e.target.value || undefined })); setVisPage(1); }}>
+              <option value="">All Workers</option>
+              {visFilterOpts.socialWorkers.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </>}
+          <BoolSelect label="Safety Concerns" value={visFilters.safetyConcernsNoted}
+            onChange={(v) => { setVisFilters((p) => ({ ...p, safetyConcernsNoted: v })); setVisPage(1); }} />
+        </div>
+        <button className="btn-primary shrink-0"
           onClick={() => openRecordCreate('visitations', { visitDate: new Date().toISOString().slice(0, 10), safetyConcernsNoted: false, followUpNeeded: false })}>
           <Plus size={16} />
           Add Visitation
@@ -1101,23 +1109,25 @@ export default function ResidentDetailPage() {
 
   const renderProcessRecordingsTab = () => (
     <>
-      <div className="flex flex-wrap items-center gap-3 rounded-lg bg-gray-50 dark:bg-gray-800 p-3 mb-4">
-        <Filter size={16} className="text-gray-400" />
-        <DateRange from={procFilters.dateFrom} to={procFilters.dateTo}
-          onChange={(f, t) => { setProcFilters((p) => ({ ...p, dateFrom: f, dateTo: t })); setProcPage(1); }} />
-        {procFilterOpts && <>
-          <select className="select-field max-w-[160px]" value={procFilters.sessionType || ''} onChange={(e) => { setProcFilters((p) => ({ ...p, sessionType: e.target.value || undefined })); setProcPage(1); }}>
-            <option value="">All Types</option>
-            {procFilterOpts.sessionTypes.map((o) => <option key={o} value={o}>{o}</option>)}
-          </select>
-          <select className="select-field max-w-[160px]" value={procFilters.socialWorker || ''} onChange={(e) => { setProcFilters((p) => ({ ...p, socialWorker: e.target.value || undefined })); setProcPage(1); }}>
-            <option value="">All Workers</option>
-            {procFilterOpts.socialWorkers.map((o) => <option key={o} value={o}>{o}</option>)}
-          </select>
-        </>}
-        <BoolSelect label="Concerns" value={procFilters.concernsFlagged}
-          onChange={(v) => { setProcFilters((p) => ({ ...p, concernsFlagged: v })); setProcPage(1); }} />
-        <button className="btn-primary ml-auto"
+      <div className="mb-4 flex items-start gap-3">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3 p-3">
+          <Filter size={16} className="shrink-0 text-gray-400" />
+          <DateRange from={procFilters.dateFrom} to={procFilters.dateTo}
+            onChange={(f, t) => { setProcFilters((p) => ({ ...p, dateFrom: f, dateTo: t })); setProcPage(1); }} />
+          {procFilterOpts && <>
+            <select className="select-field max-w-[160px]" value={procFilters.sessionType || ''} onChange={(e) => { setProcFilters((p) => ({ ...p, sessionType: e.target.value || undefined })); setProcPage(1); }}>
+              <option value="">All Types</option>
+              {procFilterOpts.sessionTypes.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+            <select className="select-field max-w-[160px]" value={procFilters.socialWorker || ''} onChange={(e) => { setProcFilters((p) => ({ ...p, socialWorker: e.target.value || undefined })); setProcPage(1); }}>
+              <option value="">All Workers</option>
+              {procFilterOpts.socialWorkers.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </>}
+          <BoolSelect label="Concerns" value={procFilters.concernsFlagged}
+            onChange={(v) => { setProcFilters((p) => ({ ...p, concernsFlagged: v })); setProcPage(1); }} />
+        </div>
+        <button className="btn-primary shrink-0"
           onClick={() => openRecordCreate('processRecordings', { sessionDate: new Date().toISOString().slice(0, 10), progressNoted: false, concernsFlagged: false, referralMade: false })}>
           <Plus size={16} />
           Add Session
@@ -1208,13 +1218,13 @@ export default function ResidentDetailPage() {
 
   // -- Render --
 
-  if (loading) return <div className="mx-auto max-w-6xl px-4 py-10"><p className="text-center text-sm text-gray-500">Loading...</p></div>;
-  if (error) return <div className="mx-auto max-w-6xl px-4 py-10"><p className="text-center text-sm text-red-500">Error: {error}</p></div>;
-  if (!resident || !editData) return <div className="mx-auto max-w-6xl px-4 py-10"><p className="text-center text-sm text-gray-500">Resident not found.</p></div>;
+  if (loading) return <div className="p-4 sm:p-6 lg:p-8"><p className="text-center text-sm text-gray-500">Loading...</p></div>;
+  if (error) return <div className="p-4 sm:p-6 lg:p-8"><p className="text-center text-sm text-red-500">Error: {error}</p></div>;
+  if (!resident || !editData) return <div className="p-4 sm:p-6 lg:p-8"><p className="text-center text-sm text-gray-500">Resident not found.</p></div>;
 
   return (
     <>
-      <div className="mx-auto max-w-6xl px-4 py-6">
+      <div className="p-4 sm:p-6 lg:p-8">
         <button className="btn-ghost mb-4" onClick={() => navigate('/cases')}>
           <ArrowLeft size={16} />
           {backLabel}
@@ -1228,25 +1238,25 @@ export default function ResidentDetailPage() {
               <h2 className="text-xl font-bold text-gray-900 dark:text-white truncate">{resident.caseControlNo}</h2>
               <p className="text-sm text-gray-500 dark:text-gray-400">{resident.internalCode} &middot; {resident.caseStatus}</p>
             </div>
-            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+            <div className="flex items-center gap-2">
               {activeTab === 'resident' && (
                 isEditing ? (
                   <>
-                    <button className="btn-primary w-full sm:w-auto" onClick={handleSave} disabled={saving} title="Save">
+                    <button className="btn-primary" onClick={handleSave} disabled={saving} title="Save">
                       {saving ? 'Saving...' : <><Save size={16} /> Save</>}
                     </button>
-                    <button className="btn-secondary w-full sm:w-auto"
+                    <button className="btn-secondary"
                       onClick={() => { setEditData({ ...resident }); setIsEditing(false); }} disabled={saving} title="Cancel">
                       <X size={16} /> Cancel
                     </button>
                   </>
                 ) : (
                   <>
-                    <button className="btn-secondary w-full sm:w-auto" onClick={() => setIsEditing(true)} title="Edit">
-                      <Pencil size={16} /> Edit
+                    <button className="btn-icon" onClick={() => setIsEditing(true)} title="Edit">
+                      <Pencil size={16} />
                     </button>
-                    <button className="btn-danger w-full sm:w-auto" onClick={handleDelete} disabled={saving} title="Delete">
-                      <Trash2 size={16} /> Delete
+                    <button className="inline-flex items-center justify-center rounded-lg p-2 text-red-500 transition hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-700 cursor-pointer" onClick={handleDelete} disabled={saving} title="Delete">
+                      <Trash2 size={16} />
                     </button>
                   </>
                 )

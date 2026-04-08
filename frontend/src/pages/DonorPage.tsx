@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { AuthService } from '../api/AuthService';
@@ -26,21 +27,20 @@ import {
   ChevronRight,
   Filter,
   Users,
+  Building2,
   DollarSign,
+  Package,
+  HandHelping,
+  GraduationCap,
+  Share2,
+  PanelLeftClose,
+  PanelLeftOpen,
   BarChart3,
 } from 'lucide-react';
 
 const PAGE_SIZE_OPTIONS = [20, 50, 100];
 
-const SUPPORTER_TYPES = [
-  'MonetaryDonor',
-  'InKindDonor',
-  'Volunteer',
-  'SkillsContributor',
-  'SocialMediaAdvocate',
-  'PartnerOrganization',
-  'Anonymous',
-];
+const SUPPORTER_TYPES = ['MonetaryDonor', 'InKindDonor', 'Volunteer', 'SkillsContributor', 'SocialMediaAdvocate', 'PartnerOrganization'];
 
 const DONATION_TYPES  = ['Monetary', 'InKind', 'Volunteer', 'Skills', 'SocialMedia'];
 const FREQUENCY_OPTIONS = ['Once', 'Monthly'];
@@ -169,24 +169,30 @@ function formatCell(value: unknown): string {
 
 function formatAmount(amount: number | null): string {
   if (amount === null || amount === undefined) return '--';
-  return `USD ${Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+  return `$${Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
 }
 
 function TypeIcon({ type }: { type: string }) {
   switch (type) {
-    case 'Monetary':    return <DollarSign className="h-4 w-4 text-green-600" />;
-    case 'InKind':      return <Filter className="h-4 w-4 text-blue-600" />;
-    case 'Volunteer':   return <Users className="h-4 w-4 text-purple-600" />;
-    case 'Skills':      return <Pencil className="h-4 w-4 text-amber-600" />;
-    case 'SocialMedia': return <Search className="h-4 w-4 text-pink-600" />;
-    default:            return <DollarSign className="h-4 w-4 text-gray-500" />;
+    case 'Monetary':    return <DollarSign className="h-4 w-4 shrink-0 text-green-600" />;
+    case 'InKind':      return <Package className="h-4 w-4 shrink-0 text-blue-600" />;
+    case 'Volunteer':   return <HandHelping className="h-4 w-4 shrink-0 text-purple-600" />;
+    case 'Skills':      return <GraduationCap className="h-4 w-4 shrink-0 text-amber-600" />;
+    case 'SocialMedia': return <Share2 className="h-4 w-4 shrink-0 text-pink-600" />;
+    default:            return <DollarSign className="h-4 w-4 shrink-0 text-gray-500" />;
   }
 }
 
 function SupporterIcon({ type }: { type: string }) {
-  if (type === 'Corporate') return <Users className="h-4 w-4 text-blue-600" />;
-  if (type === 'Anonymous') return <Users className="h-4 w-4 text-gray-400" />;
-  return <Users className="h-4 w-4 text-orange-500" />;
+  switch (type) {
+    case 'MonetaryDonor':       return <DollarSign className="h-4 w-4 shrink-0 text-green-600" />;
+    case 'InKindDonor':         return <Package className="h-4 w-4 shrink-0 text-blue-600" />;
+    case 'Volunteer':           return <HandHelping className="h-4 w-4 shrink-0 text-purple-600" />;
+    case 'SkillsContributor':   return <GraduationCap className="h-4 w-4 shrink-0 text-amber-600" />;
+    case 'SocialMediaAdvocate': return <Share2 className="h-4 w-4 shrink-0 text-pink-600" />;
+    case 'PartnerOrganization': return <Building2 className="h-4 w-4 shrink-0 text-indigo-600" />;
+    default:                    return <Users className="h-4 w-4 shrink-0 text-gray-500" />;
+  }
 }
 
 function badgeClass(status: string): string {
@@ -218,9 +224,22 @@ const contributionRequired: { key: keyof Contribution; label: string }[] = [
 
 export default function DonorPage() {
   const isLoggedIn = AuthService.isAuthenticated();
+  const location = useLocation();
   const allocationPageRef = useRef<AllocationPageHandle>(null);
 
+  const locationState = location.state as { tab?: string; donationId?: number } | null;
   const [activeTab, setActiveTab] = useState<'supporters' | 'contributions' | 'allocations'>('supporters');
+  const [pendingDonationId, setPendingDonationId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (locationState?.tab === 'contributions' || locationState?.tab === 'allocations') {
+      setActiveTab('contributions');
+    }
+    if (locationState?.donationId) {
+      setPendingDonationId(locationState.donationId);
+    }
+  }, [location.key]);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // shared
   const [loading,    setLoading]    = useState(false);
@@ -252,6 +271,10 @@ export default function DonorPage() {
   const [isEditingCon,        setIsEditingCon]        = useState(false);
   const [isAddingCon,         setIsAddingCon]         = useState(false);
   const [newConData,          setNewConData]          = useState<Contribution>({ ...blankContribution });
+
+  // delete confirmations
+  const [showDeleteSupConfirm, setShowDeleteSupConfirm] = useState(false);
+  const [showDeleteConConfirm, setShowDeleteConConfirm] = useState(false);
 
   // ── Debounce search ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -301,6 +324,17 @@ export default function DonorPage() {
   };
 
   useEffect(() => { loadData(); }, [activeTab, page, pageSize, supporterFilters, contributionFilters, isLoggedIn]);
+
+  // ── Open contribution modal from navigation state ───────────────────────
+  useEffect(() => {
+    if (pendingDonationId && contributions.length > 0) {
+      const match = contributions.find((c) => c.donationId === pendingDonationId);
+      if (match) {
+        openContribution(match);
+        setPendingDonationId(null);
+      }
+    }
+  }, [pendingDonationId, contributions]);
 
   // ── Tab switch resets ────────────────────────────────────────────────────
   const switchTab = (tab: 'supporters' | 'contributions' | 'allocations') => {
@@ -368,7 +402,7 @@ export default function DonorPage() {
     finally { setSaving(false); }
   };
   const handleDeleteSupporter = async () => {
-    if (!selectedSupporter || !window.confirm('Delete this supporter profile?')) return;
+    if (!selectedSupporter) return;
     console.log("Deleting supporter ID:", selectedSupporter?.supporterId);
     setSaving(true);
     try { await deleteSupporter(selectedSupporter.supporterId); closeSupporter(); loadData(); }
@@ -402,7 +436,7 @@ export default function DonorPage() {
     finally { setSaving(false); }
   };
   const handleDeleteContribution = async () => {
-    if (!selectedContribution || !window.confirm('Delete this contribution record?')) return;
+    if (!selectedContribution) return;
     setSaving(true);
     try { await deleteContribution(selectedContribution.donationId); closeContribution(); loadData(); }
     catch (e) { alert(e instanceof Error ? e.message : 'Failed to delete'); }
@@ -508,64 +542,93 @@ export default function DonorPage() {
   return (
     <>
       {!isLoggedIn ? accessDeniedScreen : (
-        <div className="flex min-h-screen flex-col lg:flex-row">
+        <div className="flex flex-col lg:flex-row">
 
           {/* ── SIDEBAR ───────────────────────────────────────────────────── */}
-          <aside className="w-full shrink-0 border-b border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800 lg:w-60 lg:border-b-0 lg:border-r">
-            <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-              {activeTab === 'supporters' ? 'Supporter Type' : 'Donation Type'}
-            </h2>
-            <ul className="flex gap-2 overflow-x-auto pb-1 lg:block lg:space-y-1 lg:pb-0">
-              {activeTab === 'supporters' ? (
-                <>
-                  <li>
-                    <button
-                      className={`flex w-full min-w-max items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm font-medium transition lg:min-w-0 ${!activeSupporterType ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-700' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'}`}
-                      onClick={() => setSupporterTypeFilter(undefined)}
-                    >
-                      <Filter className="h-4 w-4" />
-                      All Types
-                    </button>
-                  </li>
-                  {(filterOptions?.supporterTypes ?? SUPPORTER_TYPES).map((t) => (
-                    <li key={t}>
-                      <button
-                        className={`flex w-full min-w-max items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm font-medium transition lg:min-w-0 ${activeSupporterType?.toLowerCase() === t.toLowerCase() ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-700' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'}`}
-                        onClick={() => setSupporterTypeFilter(t)}
-                      >
-                        <SupporterIcon type={t} /> {t}
-                      </button>
-                    </li>
-                  ))}
-                </>
-              ) : (
-                <>
-                  <li>
-                    <button
-                      className={`flex w-full min-w-max items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm font-medium transition lg:min-w-0 ${!activeDonationType ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-700' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'}`}
-                      onClick={() => updateContributionFilter('donationType', undefined)}
-                    >
-                      <Filter className="h-4 w-4" />
-                      All Types
-                    </button>
-                  </li>
-                  {DONATION_TYPES.map((t) => (
-                    <li key={t}>
-                      <button
-                        className={`flex w-full min-w-max items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm font-medium transition lg:min-w-0 ${activeDonationType === t ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-700' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'}`}
-                        onClick={() => updateContributionFilter('donationType', t)}
-                      >
-                        <TypeIcon type={t} /> {t}
-                      </button>
-                    </li>
-                  ))}
-                </>
+          <aside className={`w-full shrink-0 border-b border-gray-200 bg-white transition-all duration-200 dark:border-gray-700 dark:bg-gray-900 lg:border-b-0 lg:border-r ${sidebarCollapsed ? 'lg:w-16' : 'lg:w-60'}`}>
+            {/* Header with collapse toggle */}
+            <div className={`flex items-center pt-6 pb-2 ${sidebarCollapsed ? 'lg:justify-center lg:px-2 px-5' : 'justify-between px-5'}`}>
+              {!sidebarCollapsed && (
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                  {activeTab === 'supporters' ? 'Supporter Type' : 'Donation Type'}
+                </h2>
               )}
-            </ul>
+              <button
+                onClick={() => setSidebarCollapsed(prev => !prev)}
+                className="btn-icon hidden lg:inline-flex"
+                aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              >
+                {sidebarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+              </button>
+            </div>
+            <div className={`pb-6 ${sidebarCollapsed ? 'lg:px-2 px-5' : 'px-5'}`}>
+              <ul className="flex gap-2 overflow-x-auto pb-1 lg:block lg:space-y-1 lg:pb-0">
+                {activeTab === 'supporters' ? (
+                  <>
+                    <li>
+                      <button
+                        title={sidebarCollapsed ? 'All Types' : undefined}
+                        className={`flex w-full min-w-max items-center gap-3 whitespace-nowrap rounded-lg py-2 text-sm font-medium transition lg:min-w-0 ${
+                          sidebarCollapsed ? 'lg:justify-center lg:px-2 px-3' : 'px-3 text-left'
+                        } ${!activeSupporterType ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-700' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'}`}
+                        onClick={() => setSupporterTypeFilter(undefined)}
+                      >
+                        <Filter className="h-4 w-4 shrink-0" />
+                        <span className={sidebarCollapsed ? 'lg:hidden' : ''}>All Types</span>
+                      </button>
+                    </li>
+                    {(filterOptions?.supporterTypes ?? SUPPORTER_TYPES).map((t) => (
+                      <li key={t}>
+                        <button
+                          title={sidebarCollapsed ? t : undefined}
+                          className={`flex w-full min-w-max items-center gap-3 whitespace-nowrap rounded-lg py-2 text-sm font-medium transition lg:min-w-0 ${
+                            sidebarCollapsed ? 'lg:justify-center lg:px-2 px-3' : 'px-3 text-left'
+                          } ${activeSupporterType?.toLowerCase() === t.toLowerCase() ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-700' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'}`}
+                          onClick={() => setSupporterTypeFilter(t)}
+                        >
+                          <SupporterIcon type={t} />
+                          <span className={sidebarCollapsed ? 'lg:hidden' : ''}>{t}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </>
+                ) : (
+                  <>
+                    <li>
+                      <button
+                        title={sidebarCollapsed ? 'All Types' : undefined}
+                        className={`flex w-full min-w-max items-center gap-3 whitespace-nowrap rounded-lg py-2 text-sm font-medium transition lg:min-w-0 ${
+                          sidebarCollapsed ? 'lg:justify-center lg:px-2 px-3' : 'px-3 text-left'
+                        } ${!activeDonationType ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-700' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'}`}
+                        onClick={() => updateContributionFilter('donationType', undefined)}
+                      >
+                        <Filter className="h-4 w-4 shrink-0" />
+                        <span className={sidebarCollapsed ? 'lg:hidden' : ''}>All Types</span>
+                      </button>
+                    </li>
+                    {DONATION_TYPES.map((t) => (
+                      <li key={t}>
+                        <button
+                          title={sidebarCollapsed ? t : undefined}
+                          className={`flex w-full min-w-max items-center gap-3 whitespace-nowrap rounded-lg py-2 text-sm font-medium transition lg:min-w-0 ${
+                            sidebarCollapsed ? 'lg:justify-center lg:px-2 px-3' : 'px-3 text-left'
+                          } ${activeDonationType === t ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-700' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'}`}
+                          onClick={() => updateContributionFilter('donationType', t)}
+                        >
+                          <TypeIcon type={t} />
+                          <span className={sidebarCollapsed ? 'lg:hidden' : ''}>{t}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </>
+                )}
+              </ul>
+            </div>
           </aside>
 
           {/* ── MAIN ──────────────────────────────────────────────────────── */}
-          <div className="flex-1 p-4 sm:p-6">
+          <div className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
 
             {/* Header */}
             <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
@@ -816,7 +879,7 @@ export default function DonorPage() {
         <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="supporter-dialog-title" onClick={closeSupporter}>
           <div className="modal-body" onClick={(e) => e.stopPropagation()}>
             {/* Top bar */}
-            <div className="mb-6 flex items-start gap-4">
+            <div className="mb-6 flex items-start gap-4 border-b border-gray-100 pb-5 dark:border-gray-700">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-orange-50 dark:bg-orange-500/10">
                 <SupporterIcon type={selectedSupporter.supporterType} />
               </div>
@@ -829,43 +892,71 @@ export default function DonorPage() {
                   <span className={badgeClass(selectedSupporter.status)}>{selectedSupporter.status}</span>
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="ml-4 flex items-center gap-2">
                 {isEditingSup ? (
                   <>
-                    <button className="btn-primary" onClick={handleSaveSupporter} disabled={saving}>
-                      <Check className="h-4 w-4" /> {saving ? 'Saving...' : 'Save'}
+                    <button
+                      className="inline-flex items-center justify-center rounded-lg bg-orange-500 p-2 text-white shadow-sm transition hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 disabled:opacity-50 cursor-pointer"
+                      onClick={handleSaveSupporter}
+                      disabled={saving}
+                      aria-label={saving ? 'Saving record' : 'Save record'}
+                      title="Save"
+                    >
+                      {saving ? <span className="text-xs font-medium">Saving...</span> : <Check size={16} />}
                     </button>
-                    <button className="btn-secondary" onClick={() => { setEditSupData({ ...selectedSupporter }); setIsEditingSup(false); }} disabled={saving}>
-                      <X className="h-4 w-4" /> Cancel
+                    <button
+                      className="inline-flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 p-2 text-gray-600 dark:text-gray-400 transition hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-gray-200 disabled:opacity-50 cursor-pointer"
+                      onClick={() => { setEditSupData({ ...selectedSupporter }); setIsEditingSup(false); }}
+                      disabled={saving}
+                      aria-label="Cancel editing"
+                      title="Cancel"
+                    >
+                      <X size={16} />
                     </button>
                   </>
                 ) : (
                   <>
-                    <button className="btn-secondary" onClick={() => setIsEditingSup(true)}>
-                      <Pencil className="h-4 w-4" /> Edit
+                    <button
+                      className="btn-icon"
+                      onClick={() => setIsEditingSup(true)}
+                      aria-label="Edit record"
+                      title="Edit"
+                    >
+                      <Pencil size={16} />
                     </button>
-                    <button className="btn-danger" onClick={handleDeleteSupporter} disabled={saving}>
-                      <Trash2 className="h-4 w-4" /> Delete
+                    <button
+                      className="inline-flex items-center justify-center rounded-lg p-2 text-red-500 transition hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-700 disabled:opacity-50 cursor-pointer"
+                      onClick={() => setShowDeleteSupConfirm(true)}
+                      aria-label="Delete record"
+                      title="Delete"
+                    >
+                      <Trash2 size={16} />
                     </button>
                   </>
                 )}
               </div>
-              <button className="btn-icon" onClick={closeSupporter} aria-label="Close dialog">
-                <X className="h-5 w-5" />
-              </button>
+              {!isEditingSup && (
+                <button
+                  className="ml-2 inline-flex items-center justify-center rounded-lg p-1 text-gray-400 transition hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300 cursor-pointer"
+                  onClick={closeSupporter}
+                  aria-label="Close dialog"
+                >
+                  <X size={20} />
+                </button>
+              )}
             </div>
 
             {/* Sections */}
             {supporterSections.map((sec) => (
               <div className="mb-6" key={sec.title}>
-                <h3 className="mb-3 border-b border-gray-100 dark:border-gray-700 pb-2 text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{sec.title}</h3>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <h3 className="mb-3 border-b border-gray-100 dark:border-gray-700 pb-2 text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">{sec.title}</h3>
+                <div className="grid grid-cols-1 gap-4 rounded-xl bg-gray-50 p-4 sm:grid-cols-2 dark:bg-white/5">
                   {sec.fields.map((col) => (
-                    <div className="flex flex-col gap-1" key={col.key}>
-                      <label className="text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">{col.label}</label>
+                    <div className="flex flex-col gap-1.5" key={col.key}>
+                      <label className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">{col.label}</label>
                       {isEditingSup
                         ? renderSupporterInput(col, editSupData, (k, v) => setEditSupData((p) => ({ ...p!, [k]: v })))
-                        : <span className="text-sm text-gray-700 dark:text-gray-300">{formatCell(selectedSupporter[col.key])}</span>
+                        : <span className="text-sm font-medium text-gray-900 dark:text-white">{formatCell(selectedSupporter[col.key])}</span>
                       }
                     </div>
                   ))}
@@ -882,7 +973,7 @@ export default function DonorPage() {
         <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="new-supporter-dialog-title" onClick={closeAddSupporter}>
           <div className="modal-body" onClick={(e) => e.stopPropagation()}>
             {/* Top bar */}
-            <div className="mb-6 flex items-start gap-4">
+            <div className="mb-6 flex items-start gap-4 border-b border-gray-100 pb-5 dark:border-gray-700">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-orange-50 dark:bg-orange-500/10">
                 <Users className="h-5 w-5 text-orange-500" />
               </div>
@@ -890,27 +981,36 @@ export default function DonorPage() {
                 <h2 id="new-supporter-dialog-title" className="text-lg font-bold text-gray-900 dark:text-white">New Supporter</h2>
                 <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">Add a new supporter profile</p>
               </div>
-              <div className="flex items-center gap-2">
-                <button className="btn-primary" onClick={handleCreateSupporter} disabled={saving}>
-                  <Check className="h-4 w-4" /> {saving ? 'Creating...' : 'Create'}
+              <div className="ml-4 flex items-center gap-2">
+                <button
+                  className="inline-flex items-center justify-center rounded-lg bg-orange-500 p-2 text-white shadow-sm transition hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 disabled:opacity-50 cursor-pointer"
+                  onClick={handleCreateSupporter}
+                  disabled={saving}
+                  aria-label={saving ? 'Creating record' : 'Create record'}
+                  title="Create"
+                >
+                  {saving ? <span className="text-xs font-medium">Creating...</span> : <Check size={16} />}
                 </button>
-                <button className="btn-secondary" onClick={closeAddSupporter} disabled={saving}>
-                  <X className="h-4 w-4" /> Cancel
+                <button
+                  className="inline-flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 p-2 text-gray-600 dark:text-gray-400 transition hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-gray-200 disabled:opacity-50 cursor-pointer"
+                  onClick={closeAddSupporter}
+                  disabled={saving}
+                  aria-label="Cancel creating record"
+                  title="Cancel"
+                >
+                  <X size={16} />
                 </button>
               </div>
-              <button className="btn-icon" onClick={closeAddSupporter} aria-label="Close dialog">
-                <X className="h-5 w-5" />
-              </button>
             </div>
 
             {/* Sections */}
             {supporterSections.map((sec) => (
               <div className="mb-6" key={sec.title}>
-                <h3 className="mb-3 border-b border-gray-100 dark:border-gray-700 pb-2 text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{sec.title}</h3>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <h3 className="mb-3 border-b border-gray-100 dark:border-gray-700 pb-2 text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">{sec.title}</h3>
+                <div className="grid grid-cols-1 gap-4 rounded-xl bg-gray-50 p-4 sm:grid-cols-2 dark:bg-white/5">
                   {sec.fields.map((col) => (
-                    <div className="flex flex-col gap-1" key={col.key}>
-                      <label className="text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">{col.label}</label>
+                    <div className="flex flex-col gap-1.5" key={col.key}>
+                      <label className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">{col.label}</label>
                       {renderSupporterInput(col, newSupData, (k, v) => setNewSupData((p) => ({ ...p, [k]: v })), true)}
                     </div>
                   ))}
@@ -927,7 +1027,7 @@ export default function DonorPage() {
         <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="contribution-dialog-title" onClick={closeContribution}>
           <div className="modal-body" onClick={(e) => e.stopPropagation()}>
             {/* Top bar */}
-            <div className="mb-6 flex items-start gap-4">
+            <div className="mb-6 flex items-start gap-4 border-b border-gray-100 pb-5 dark:border-gray-700">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-orange-50 dark:bg-orange-500/10">
                 <TypeIcon type={selectedContribution.donationType} />
               </div>
@@ -939,43 +1039,71 @@ export default function DonorPage() {
                   <span className={badgeClass(selectedContribution.status)}>{selectedContribution.status}</span>
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="ml-4 flex items-center gap-2">
                 {isEditingCon ? (
                   <>
-                    <button className="btn-primary" onClick={handleSaveContribution} disabled={saving}>
-                      <Check className="h-4 w-4" /> {saving ? 'Saving...' : 'Save'}
+                    <button
+                      className="inline-flex items-center justify-center rounded-lg bg-orange-500 p-2 text-white shadow-sm transition hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 disabled:opacity-50 cursor-pointer"
+                      onClick={handleSaveContribution}
+                      disabled={saving}
+                      aria-label={saving ? 'Saving record' : 'Save record'}
+                      title="Save"
+                    >
+                      {saving ? <span className="text-xs font-medium">Saving...</span> : <Check size={16} />}
                     </button>
-                    <button className="btn-secondary" onClick={() => { setEditConData({ ...selectedContribution }); setIsEditingCon(false); }} disabled={saving}>
-                      <X className="h-4 w-4" /> Cancel
+                    <button
+                      className="inline-flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 p-2 text-gray-600 dark:text-gray-400 transition hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-gray-200 disabled:opacity-50 cursor-pointer"
+                      onClick={() => { setEditConData({ ...selectedContribution }); setIsEditingCon(false); }}
+                      disabled={saving}
+                      aria-label="Cancel editing"
+                      title="Cancel"
+                    >
+                      <X size={16} />
                     </button>
                   </>
                 ) : (
                   <>
-                    <button className="btn-secondary" onClick={() => setIsEditingCon(true)}>
-                      <Pencil className="h-4 w-4" /> Edit
+                    <button
+                      className="btn-icon"
+                      onClick={() => setIsEditingCon(true)}
+                      aria-label="Edit record"
+                      title="Edit"
+                    >
+                      <Pencil size={16} />
                     </button>
-                    <button className="btn-danger" onClick={handleDeleteContribution} disabled={saving}>
-                      <Trash2 className="h-4 w-4" /> Delete
+                    <button
+                      className="inline-flex items-center justify-center rounded-lg p-2 text-red-500 transition hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-700 disabled:opacity-50 cursor-pointer"
+                      onClick={() => setShowDeleteConConfirm(true)}
+                      aria-label="Delete record"
+                      title="Delete"
+                    >
+                      <Trash2 size={16} />
                     </button>
                   </>
                 )}
               </div>
-              <button className="btn-icon" onClick={closeContribution} aria-label="Close dialog">
-                <X className="h-5 w-5" />
-              </button>
+              {!isEditingCon && (
+                <button
+                  className="ml-2 inline-flex items-center justify-center rounded-lg p-1 text-gray-400 transition hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300 cursor-pointer"
+                  onClick={closeContribution}
+                  aria-label="Close dialog"
+                >
+                  <X size={20} />
+                </button>
+              )}
             </div>
 
             {/* Sections */}
             {contributionSections.map((sec) => (
               <div className="mb-6" key={sec.title}>
-                <h3 className="mb-3 border-b border-gray-100 dark:border-gray-700 pb-2 text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{sec.title}</h3>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <h3 className="mb-3 border-b border-gray-100 dark:border-gray-700 pb-2 text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">{sec.title}</h3>
+                <div className="grid grid-cols-1 gap-4 rounded-xl bg-gray-50 p-4 sm:grid-cols-2 dark:bg-white/5">
                   {sec.fields.map((col) => (
-                    <div className="flex flex-col gap-1" key={col.key}>
-                      <label className="text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">{col.label}</label>
+                    <div className="flex flex-col gap-1.5" key={col.key}>
+                      <label className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">{col.label}</label>
                       {isEditingCon
                         ? renderContributionInput(col, editConData, (k, v) => setEditConData((p) => ({ ...p!, [k]: v })))
-                        : <span className="text-sm text-gray-700 dark:text-gray-300">{formatCell(selectedContribution[col.key])}</span>
+                        : <span className="text-sm font-medium text-gray-900 dark:text-white">{formatCell(selectedContribution[col.key])}</span>
                       }
                     </div>
                   ))}
@@ -992,7 +1120,7 @@ export default function DonorPage() {
         <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="new-contribution-dialog-title" onClick={closeAddContribution}>
           <div className="modal-body" onClick={(e) => e.stopPropagation()}>
             {/* Top bar */}
-            <div className="mb-6 flex items-start gap-4">
+            <div className="mb-6 flex items-start gap-4 border-b border-gray-100 pb-5 dark:border-gray-700">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-orange-50 dark:bg-orange-500/10">
                 <DollarSign className="h-5 w-5 text-orange-500" />
               </div>
@@ -1000,33 +1128,78 @@ export default function DonorPage() {
                 <h2 id="new-contribution-dialog-title" className="text-lg font-bold text-gray-900 dark:text-white">Record Contribution</h2>
                 <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">Log a new donation or contribution</p>
               </div>
-              <div className="flex items-center gap-2">
-                <button className="btn-primary" onClick={handleCreateContribution} disabled={saving}>
-                  <Check className="h-4 w-4" /> {saving ? 'Saving...' : 'Record'}
+              <div className="ml-4 flex items-center gap-2">
+                <button
+                  className="inline-flex items-center justify-center rounded-lg bg-orange-500 p-2 text-white shadow-sm transition hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 disabled:opacity-50 cursor-pointer"
+                  onClick={handleCreateContribution}
+                  disabled={saving}
+                  aria-label={saving ? 'Creating record' : 'Create record'}
+                  title="Create"
+                >
+                  {saving ? <span className="text-xs font-medium">Creating...</span> : <Check size={16} />}
                 </button>
-                <button className="btn-secondary" onClick={closeAddContribution} disabled={saving}>
-                  <X className="h-4 w-4" /> Cancel
+                <button
+                  className="inline-flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 p-2 text-gray-600 dark:text-gray-400 transition hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-gray-200 disabled:opacity-50 cursor-pointer"
+                  onClick={closeAddContribution}
+                  disabled={saving}
+                  aria-label="Cancel creating record"
+                  title="Cancel"
+                >
+                  <X size={16} />
                 </button>
               </div>
-              <button className="btn-icon" onClick={closeAddContribution} aria-label="Close dialog">
-                <X className="h-5 w-5" />
-              </button>
             </div>
 
             {/* Sections */}
             {contributionSections.map((sec) => (
               <div className="mb-6" key={sec.title}>
-                <h3 className="mb-3 border-b border-gray-100 dark:border-gray-700 pb-2 text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{sec.title}</h3>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <h3 className="mb-3 border-b border-gray-100 dark:border-gray-700 pb-2 text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">{sec.title}</h3>
+                <div className="grid grid-cols-1 gap-4 rounded-xl bg-gray-50 p-4 sm:grid-cols-2 dark:bg-white/5">
                   {sec.fields.map((col) => (
-                    <div className="flex flex-col gap-1" key={col.key}>
-                      <label className="text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">{col.label}</label>
+                    <div className="flex flex-col gap-1.5" key={col.key}>
+                      <label className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">{col.label}</label>
                       {renderContributionInput(col, newConData, (k, v) => setNewConData((p) => ({ ...p, [k]: v })), true)}
                     </div>
                   ))}
                 </div>
               </div>
             ))}
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ── DELETE SUPPORTER CONFIRMATION ────────────────────────────────────────── */}
+      {showDeleteSupConfirm && createPortal(
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm" role="alertdialog" aria-modal="true" onClick={() => setShowDeleteSupConfirm(false)}>
+          <div className="relative mx-4 w-full max-w-md rounded-2xl bg-white dark:bg-gray-900 p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-red-100 dark:bg-red-500/10">
+              <Trash2 size={20} className="text-red-500" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Delete Supporter</h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Are you sure you want to delete this supporter? This action cannot be undone.</p>
+            <div className="mt-6 flex items-center justify-end gap-3">
+              <button className="btn-secondary" onClick={() => setShowDeleteSupConfirm(false)}>Cancel</button>
+              <button className="btn-danger" onClick={() => { setShowDeleteSupConfirm(false); handleDeleteSupporter(); }}>Delete</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ── DELETE CONTRIBUTION CONFIRMATION ─────────────────────────────────────── */}
+      {showDeleteConConfirm && createPortal(
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm" role="alertdialog" aria-modal="true" onClick={() => setShowDeleteConConfirm(false)}>
+          <div className="relative mx-4 w-full max-w-md rounded-2xl bg-white dark:bg-gray-900 p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-red-100 dark:bg-red-500/10">
+              <Trash2 size={20} className="text-red-500" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Delete Contribution</h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Are you sure you want to delete this contribution? This action cannot be undone.</p>
+            <div className="mt-6 flex items-center justify-end gap-3">
+              <button className="btn-secondary" onClick={() => setShowDeleteConConfirm(false)}>Cancel</button>
+              <button className="btn-danger" onClick={() => { setShowDeleteConConfirm(false); handleDeleteContribution(); }}>Delete</button>
+            </div>
           </div>
         </div>,
         document.body
