@@ -12,15 +12,9 @@ public class AllocationController : ControllerBase
 
     public AllocationController(HearthHavenDbContext db) => _db = db;
 
-    // ✅ GET /Allocation (WITH SEARCH)
+    // GET /Allocation
     [HttpGet]
-    public IActionResult GetAll(
-        [FromQuery] int? donationId = null,
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20,
-        [FromQuery] string? search = null,
-        [FromQuery] string? programArea = null
-    )
+    public IActionResult GetAll([FromQuery] int? donationId = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
         var query = _db.DonationAllocations
             .Join(_db.Donations,
@@ -34,23 +28,6 @@ public class AllocationController : ControllerBase
 
         if (donationId.HasValue)
             query = query.Where(x => x.a.DonationId == donationId.Value);
-
-        if (!string.IsNullOrWhiteSpace(programArea))
-            query = query.Where(x => x.a.ProgramArea == programArea);
-
-        // 🔍 SEARCH LOGIC (THIS WAS MISSING)
-        if (!string.IsNullOrEmpty(search))
-        {
-            search = search.ToLower();
-
-            query = query.Where(x =>
-                x.s.Name.ToLower().Contains(search) ||              // Safehouse
-                x.a.ProgramArea.ToLower().Contains(search) ||       // Program Area
-                x.d.DonationType.ToLower().Contains(search) ||      // Type
-                x.a.AmountAllocated.ToString().Contains(search) ||  // Amount
-                x.a.AllocationDate.ToString().Contains(search)      // Date
-            );
-        }
 
         var totalCount = query.Count();
         var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
@@ -77,7 +54,7 @@ public class AllocationController : ControllerBase
         return Ok(new { data, totalCount, page, pageSize, totalPages });
     }
 
-    // GET /Allocation/Safehouses
+    // GET /Allocation/Safehouses  — dropdown data
     [HttpGet("Safehouses")]
     public IActionResult GetSafehouses()
     {
@@ -90,7 +67,7 @@ public class AllocationController : ControllerBase
         return Ok(safehouses);
     }
 
-    // GET /Allocation/Donations
+    // GET /Allocation/Donations  — dropdown data (monetary only)
     [HttpGet("Donations")]
     public IActionResult GetDonations()
     {
