@@ -15,6 +15,9 @@ import AllocationPage from "./pages/AllocationPage";
 import ImpactDashboard from "./pages/ImpactDashboard";
 import { AuthService } from "./api/AuthService";
 import OutreachPage from "./pages/OutreachPage";
+import SafehouseManagementPage from "./pages/SafehouseManagementPage";
+import SafehouseDetailPage from "./pages/SafehouseDetailPage";
+import PartnerDetailPage from "./pages/PartnerDetailPage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import TermsPage from "./pages/TermsPage";
 import TeapotPage from "./pages/TeapotPage";
@@ -70,6 +73,9 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/cases" element={<CasePage />} />
           <Route path="/cases/:id" element={<ResidentDetailPage />} />
+          <Route path="/safehouse-management" element={<SafehouseManagementPage />} />
+          <Route path="/safehouse-management/safehouses/:id" element={<SafehouseDetailPage />} />
+          <Route path="/safehouse-management/partners/:id" element={<PartnerDetailPage />} />
           <Route path="/donate" element={<DonatePage />} />
           <Route path="/impact" element={<ImpactDashboard />} />
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
