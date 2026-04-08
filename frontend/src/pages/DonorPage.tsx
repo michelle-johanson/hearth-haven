@@ -1,8 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Link } from 'react-router-dom';
 import { AuthService } from '../api/AuthService';
-import AllocationPage, { type AllocationPageHandle } from './AllocationPage';
+import AllocationPage from './AllocationPage';
 import { Supporter, Contribution, DonorFilterOptions, SupporterFilters, ContributionFilters } from '../types/Donor';
 import {
   fetchSupporters,
@@ -27,20 +26,11 @@ import {
   Filter,
   Users,
   DollarSign,
-  BarChart3,
 } from 'lucide-react';
 
 const PAGE_SIZE_OPTIONS = [20, 50, 100];
 
-const SUPPORTER_TYPES = [
-  'MonetaryDonor',
-  'InKindDonor',
-  'Volunteer',
-  'SkillsContributor',
-  'SocialMediaAdvocate',
-  'PartnerOrganization',
-  'Anonymous',
-];
+const SUPPORTER_TYPES = ['Individual', 'Corporate', 'Anonymous'];
 
 const DONATION_TYPES  = ['Monetary', 'InKind', 'Volunteer', 'Skills', 'SocialMedia'];
 const FREQUENCY_OPTIONS = ['Once', 'Monthly'];
@@ -144,14 +134,14 @@ const cSelectMap:  Partial<Record<keyof Contribution, { opts: string[]; nullable
 // ── Blank templates ───────────────────────────────────────────────────────────
 
 const blankSupporter: Supporter = {
-  supporterId: 0, supporterType: 'MonetaryDonor', status: 'Active',
+  supporterId: 0, supporterType: 'Individual', status: 'Active',
   firstName: '', lastName: '', email: '', phone: null,
   organizationName: null, address: null, notes: null, createdAt: '',
 };
 
 const blankContribution: Contribution = {
   donationId: 0, supporterId: 0, supporterName: '',
-  donationType: 'Monetary', amount: null, currencyCode: 'USD',
+  donationType: 'Monetary', amount: null, currencyCode: 'PHP',
   isRecurring: false, frequency: 'Once', channelSource: null,
   description: null, estimatedValue: null,
   donationDate: new Date().toISOString().slice(0, 10),
@@ -169,7 +159,7 @@ function formatCell(value: unknown): string {
 
 function formatAmount(amount: number | null): string {
   if (amount === null || amount === undefined) return '--';
-  return `USD ${Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+  return `PHP ${Number(amount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
 }
 
 function TypeIcon({ type }: { type: string }) {
@@ -218,7 +208,6 @@ const contributionRequired: { key: keyof Contribution; label: string }[] = [
 
 export default function DonorPage() {
   const isLoggedIn = AuthService.isAuthenticated();
-  const allocationPageRef = useRef<AllocationPageHandle>(null);
 
   const [activeTab, setActiveTab] = useState<'supporters' | 'contributions' | 'allocations'>('supporters');
 
@@ -227,7 +216,6 @@ export default function DonorPage() {
   const [error,      setError]      = useState<string | null>(null);
   const [page,       setPage]       = useState(1);
   const [pageSize,   setPageSize]   = useState(20);
-  const [allocationPageSize, setAllocationPageSize] = useState(20);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [saving,     setSaving]     = useState(false);
@@ -508,19 +496,19 @@ export default function DonorPage() {
   return (
     <>
       {!isLoggedIn ? accessDeniedScreen : (
-        <div className="flex min-h-screen flex-col lg:flex-row">
+        <div className="flex min-h-screen">
 
           {/* ── SIDEBAR ───────────────────────────────────────────────────── */}
-          <aside className="w-full shrink-0 border-b border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800 lg:w-60 lg:border-b-0 lg:border-r">
+          <aside className="w-60 shrink-0 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-4">
             <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
               {activeTab === 'supporters' ? 'Supporter Type' : 'Donation Type'}
             </h2>
-            <ul className="flex gap-2 overflow-x-auto pb-1 lg:block lg:space-y-1 lg:pb-0">
+            <ul className="space-y-1">
               {activeTab === 'supporters' ? (
                 <>
                   <li>
                     <button
-                      className={`flex w-full min-w-max items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm font-medium transition lg:min-w-0 ${!activeSupporterType ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-700' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'}`}
+                      className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition ${!activeSupporterType ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-700' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'}`}
                       onClick={() => setSupporterTypeFilter(undefined)}
                     >
                       <Filter className="h-4 w-4" />
@@ -530,7 +518,7 @@ export default function DonorPage() {
                   {(filterOptions?.supporterTypes ?? SUPPORTER_TYPES).map((t) => (
                     <li key={t}>
                       <button
-                        className={`flex w-full min-w-max items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm font-medium transition lg:min-w-0 ${activeSupporterType?.toLowerCase() === t.toLowerCase() ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-700' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'}`}
+                        className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition ${activeSupporterType?.toLowerCase() === t.toLowerCase() ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-700' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'}`}
                         onClick={() => setSupporterTypeFilter(t)}
                       >
                         <SupporterIcon type={t} /> {t}
@@ -542,7 +530,7 @@ export default function DonorPage() {
                 <>
                   <li>
                     <button
-                      className={`flex w-full min-w-max items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm font-medium transition lg:min-w-0 ${!activeDonationType ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-700' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'}`}
+                      className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition ${!activeDonationType ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-700' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'}`}
                       onClick={() => updateContributionFilter('donationType', undefined)}
                     >
                       <Filter className="h-4 w-4" />
@@ -552,7 +540,7 @@ export default function DonorPage() {
                   {DONATION_TYPES.map((t) => (
                     <li key={t}>
                       <button
-                        className={`flex w-full min-w-max items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm font-medium transition lg:min-w-0 ${activeDonationType === t ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-700' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'}`}
+                        className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition ${activeDonationType === t ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-700' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'}`}
                         onClick={() => updateContributionFilter('donationType', t)}
                       >
                         <TypeIcon type={t} /> {t}
@@ -565,21 +553,16 @@ export default function DonorPage() {
           </aside>
 
           {/* ── MAIN ──────────────────────────────────────────────────────── */}
-          <div className="flex-1 p-4 sm:p-6">
+          <div className="flex-1 p-6">
 
             {/* Header */}
             <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                 {activeTab === 'supporters' ? 'Supporter Profiles' : activeTab === 'contributions' ? 'Contribution Activity' : 'Allocations'}
               </h1>
-              <div className="flex w-full flex-wrap items-center gap-3 lg:w-auto lg:justify-end">
-                <Link to="/donor-analytics" className="btn-secondary w-full no-underline sm:w-auto">
-                  <BarChart3 className="h-4 w-4" /> Analytics
-                </Link>
-
+              <div className="flex flex-wrap items-center gap-3">
                 {/* Tab toggle */}
-                <div className="w-full overflow-x-auto lg:w-auto">
-                  <div className="inline-flex min-w-max overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
+                <div className="inline-flex overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm">
                   <button
                     className={`inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition ${activeTab === 'supporters' ? 'bg-orange-500 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
                     onClick={() => switchTab('supporters')}
@@ -598,42 +581,24 @@ export default function DonorPage() {
                   >
                     <Filter className="h-4 w-4" /> Allocations
                   </button>
-                  </div>
                 </div>
 
                 {/* Action button */}
                 {activeTab === 'supporters' ? (
-                  <button className="btn-primary w-full sm:w-auto" onClick={openAddSupporter}>
+                  <button className="btn-primary" onClick={openAddSupporter}>
                     <Plus className="h-4 w-4" /> Add Supporter
                   </button>
                 ) : activeTab === 'contributions' ? (
-                  <button className="btn-primary w-full sm:w-auto" onClick={openAddContribution}>
+                  <button className="btn-primary" onClick={openAddContribution}>
                     <Plus className="h-4 w-4" /> Record Contribution
                   </button>
-                ) : activeTab === 'allocations' ? (
-                  <>
-                    <button className="btn-primary w-full sm:w-auto" onClick={() => allocationPageRef.current?.openCreate()}>
-                      <Plus className="h-4 w-4" /> Add Allocation
-                    </button>
-                    <label className="flex w-full items-center gap-2 text-sm text-gray-600 dark:text-gray-400 sm:w-auto">
-                      Per page:
-                      <select
-                        className="select-field w-full sm:w-auto"
-                        value={allocationPageSize}
-                        onChange={(e) => setAllocationPageSize(Number(e.target.value))}
-                        aria-label="Allocations per page"
-                      >
-                        {PAGE_SIZE_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                    </label>
-                  </>
                 ) : null}
 
                 {/* Page size */}
                 {activeTab !== 'allocations' && (
-                  <label className="flex w-full items-center gap-2 text-sm text-gray-600 dark:text-gray-400 sm:w-auto">
+                  <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                     Per page:
-                    <select className="select-field w-full sm:w-auto" value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }} aria-label={activeTab === 'supporters' ? 'Supporters per page' : 'Contributions per page'}>
+                    <select className="select-field w-auto" value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}>
                       {PAGE_SIZE_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
                     </select>
                   </label>
@@ -652,13 +617,12 @@ export default function DonorPage() {
                     placeholder={activeTab === 'supporters' ? 'Search by name, email, organization...' : 'Search by supporter, type, description...'}
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
-                    aria-label={activeTab === 'supporters' ? 'Search supporters' : 'Search contributions'}
                   />
                 </div>
 
                 {filterOptions && activeTab === 'supporters' && (
                   <div className="flex items-center gap-2">
-                    <select className="select-field w-auto" value={supporterFilters.status || ''} onChange={(e) => updateSupporterFilter('status', e.target.value || undefined)} aria-label="Filter supporters by status">
+                    <select className="select-field w-auto" value={supporterFilters.status || ''} onChange={(e) => updateSupporterFilter('status', e.target.value || undefined)}>
                       <option value="">All Statuses</option>
                       {filterOptions.statuses.map((s) => <option key={s} value={s}>{s}</option>)}
                     </select>
@@ -672,15 +636,15 @@ export default function DonorPage() {
 
                 {filterOptions && activeTab === 'contributions' && (
                   <div className="flex flex-wrap items-center gap-2">
-                    <select className="select-field w-auto" value={contributionFilters.status || ''} onChange={(e) => updateContributionFilter('status', e.target.value || undefined)} aria-label="Filter contributions by status">
+                    <select className="select-field w-auto" value={contributionFilters.status || ''} onChange={(e) => updateContributionFilter('status', e.target.value || undefined)}>
                       <option value="">All Statuses</option>
                       {filterOptions.contributionStatuses.map((s) => <option key={s} value={s}>{s}</option>)}
                     </select>
-                    <select className="select-field w-auto" value={contributionFilters.programArea || ''} onChange={(e) => updateContributionFilter('programArea', e.target.value || undefined)} aria-label="Filter contributions by program area">
+                    <select className="select-field w-auto" value={contributionFilters.programArea || ''} onChange={(e) => updateContributionFilter('programArea', e.target.value || undefined)}>
                       <option value="">All Program Areas</option>
                       {filterOptions.programAreas.map((p) => <option key={p} value={p}>{p}</option>)}
                     </select>
-                    <select className="select-field w-auto" value={contributionFilters.safehouseAllocation || ''} onChange={(e) => updateContributionFilter('safehouseAllocation', e.target.value || undefined)} aria-label="Filter contributions by safehouse">
+                    <select className="select-field w-auto" value={contributionFilters.safehouseAllocation || ''} onChange={(e) => updateContributionFilter('safehouseAllocation', e.target.value || undefined)}>
                       <option value="">All Safehouses</option>
                       {filterOptions.safehouseAllocations.map((a) => <option key={a} value={a}>{a}</option>)}
                     </select>
@@ -784,14 +748,7 @@ export default function DonorPage() {
             )}
 
             {/* ── ALLOCATIONS TAB ───────────────────────────────────────── */}
-            {activeTab === 'allocations' && (
-              <AllocationPage
-                ref={allocationPageRef}
-                pageSize={allocationPageSize}
-                onPageSizeChange={setAllocationPageSize}
-                showPageSizeControl={false}
-              />
-            )}
+            {activeTab === 'allocations' && <AllocationPage />}
 
             {/* Pagination */}
             {((activeTab === 'supporters' && supporters.length > 0) || (activeTab === 'contributions' && contributions.length > 0)) && (
@@ -813,7 +770,7 @@ export default function DonorPage() {
 
       {/* ── VIEW / EDIT SUPPORTER MODAL ──────────────────────────────────────── */}
       {selectedSupporter && editSupData && createPortal(
-        <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="supporter-dialog-title" onClick={closeSupporter}>
+        <div className="modal-overlay" onClick={closeSupporter}>
           <div className="modal-body" onClick={(e) => e.stopPropagation()}>
             {/* Top bar */}
             <div className="mb-6 flex items-start gap-4">
@@ -821,7 +778,7 @@ export default function DonorPage() {
                 <SupporterIcon type={selectedSupporter.supporterType} />
               </div>
               <div className="min-w-0 flex-1">
-                <h2 id="supporter-dialog-title" className="text-lg font-bold text-gray-900 dark:text-white">{selectedSupporter.firstName} {selectedSupporter.lastName}</h2>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white">{selectedSupporter.firstName} {selectedSupporter.lastName}</h2>
                 <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
                   {selectedSupporter.supporterType}
                   {selectedSupporter.organizationName ? ` / ${selectedSupporter.organizationName}` : ''}
@@ -850,7 +807,7 @@ export default function DonorPage() {
                   </>
                 )}
               </div>
-              <button className="btn-icon" onClick={closeSupporter} aria-label="Close dialog">
+              <button className="btn-icon" onClick={closeSupporter}>
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -879,7 +836,7 @@ export default function DonorPage() {
 
       {/* ── ADD SUPPORTER MODAL ──────────────────────────────────────────────── */}
       {isAddingSup && createPortal(
-        <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="new-supporter-dialog-title" onClick={closeAddSupporter}>
+        <div className="modal-overlay" onClick={closeAddSupporter}>
           <div className="modal-body" onClick={(e) => e.stopPropagation()}>
             {/* Top bar */}
             <div className="mb-6 flex items-start gap-4">
@@ -887,7 +844,7 @@ export default function DonorPage() {
                 <Users className="h-5 w-5 text-orange-500" />
               </div>
               <div className="min-w-0 flex-1">
-                <h2 id="new-supporter-dialog-title" className="text-lg font-bold text-gray-900 dark:text-white">New Supporter</h2>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white">New Supporter</h2>
                 <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">Add a new supporter profile</p>
               </div>
               <div className="flex items-center gap-2">
@@ -898,7 +855,7 @@ export default function DonorPage() {
                   <X className="h-4 w-4" /> Cancel
                 </button>
               </div>
-              <button className="btn-icon" onClick={closeAddSupporter} aria-label="Close dialog">
+              <button className="btn-icon" onClick={closeAddSupporter}>
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -924,7 +881,7 @@ export default function DonorPage() {
 
       {/* ── VIEW / EDIT CONTRIBUTION MODAL ───────────────────────────────────── */}
       {selectedContribution && editConData && createPortal(
-        <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="contribution-dialog-title" onClick={closeContribution}>
+        <div className="modal-overlay" onClick={closeContribution}>
           <div className="modal-body" onClick={(e) => e.stopPropagation()}>
             {/* Top bar */}
             <div className="mb-6 flex items-start gap-4">
@@ -932,7 +889,7 @@ export default function DonorPage() {
                 <TypeIcon type={selectedContribution.donationType} />
               </div>
               <div className="min-w-0 flex-1">
-                <h2 id="contribution-dialog-title" className="text-lg font-bold text-gray-900 dark:text-white">{selectedContribution.supporterName}</h2>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white">{selectedContribution.supporterName}</h2>
                 <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
                   {selectedContribution.donationType} / {selectedContribution.donationDate}
                   {' '}
@@ -960,7 +917,7 @@ export default function DonorPage() {
                   </>
                 )}
               </div>
-              <button className="btn-icon" onClick={closeContribution} aria-label="Close dialog">
+              <button className="btn-icon" onClick={closeContribution}>
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -989,7 +946,7 @@ export default function DonorPage() {
 
       {/* ── ADD CONTRIBUTION MODAL ───────────────────────────────────────────── */}
       {isAddingCon && createPortal(
-        <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="new-contribution-dialog-title" onClick={closeAddContribution}>
+        <div className="modal-overlay" onClick={closeAddContribution}>
           <div className="modal-body" onClick={(e) => e.stopPropagation()}>
             {/* Top bar */}
             <div className="mb-6 flex items-start gap-4">
@@ -997,7 +954,7 @@ export default function DonorPage() {
                 <DollarSign className="h-5 w-5 text-orange-500" />
               </div>
               <div className="min-w-0 flex-1">
-                <h2 id="new-contribution-dialog-title" className="text-lg font-bold text-gray-900 dark:text-white">Record Contribution</h2>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white">Record Contribution</h2>
                 <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">Log a new donation or contribution</p>
               </div>
               <div className="flex items-center gap-2">
@@ -1008,7 +965,7 @@ export default function DonorPage() {
                   <X className="h-4 w-4" /> Cancel
                 </button>
               </div>
-              <button className="btn-icon" onClick={closeAddContribution} aria-label="Close dialog">
+              <button className="btn-icon" onClick={closeAddContribution}>
                 <X className="h-5 w-5" />
               </button>
             </div>
