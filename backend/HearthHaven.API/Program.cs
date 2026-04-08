@@ -8,6 +8,12 @@ var builder = WebApplication.CreateBuilder(args);
 // 1. Grab the connection string
 var connectionString = builder.Configuration.GetConnectionString("AZURE_SQL_CONNECTIONSTRING");
 
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    throw new InvalidOperationException(
+        "Missing connection string 'AZURE_SQL_CONNECTIONSTRING'. Configure it with user secrets, environment variables, or hosted application settings.");
+}
+
 // 2. Setup your Operational Database
 builder.Services.AddDbContext<HearthHavenDbContext>(options =>
     options.UseSqlServer(connectionString));
@@ -20,9 +26,14 @@ builder.Services.AddDbContext<SecurityDbContext>(options =>
 builder.Services.AddIdentity<IdentityUser, IdentityRole>(options => 
 {
     options.Password.RequireDigit = true;
-    options.Password.RequiredLength = 12; 
+    options.Password.RequireLowercase = true;
+    options.Password.RequiredLength = 14; 
     options.Password.RequireUppercase = true;
     options.Password.RequireNonAlphanumeric = true;
+    options.Password.RequiredUniqueChars = 1;
+    options.Lockout.AllowedForNewUsers = true;
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+    options.Lockout.MaxFailedAccessAttempts = 5;
 })
 .AddEntityFrameworkStores<SecurityDbContext>()
 .AddDefaultTokenProviders();
