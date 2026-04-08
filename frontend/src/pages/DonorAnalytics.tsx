@@ -20,6 +20,19 @@ import { DonorAnalyticsResponse } from '../types/Donor';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend);
 
+const coralPalette = {
+  strong: '#eb7a67',
+  medium: '#f29a84',
+  soft: '#f5b59c',
+  blush: '#f8cdbd',
+  cream: '#fde3d7',
+  rose: '#cf6f70',
+  terracotta: '#b85c5c',
+  apricot: '#e7a35f',
+  text: '#6b7280',
+  grid: 'rgba(242, 140, 122, 0.16)',
+};
+
 function formatMoney(value: number) {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -34,12 +47,25 @@ const lineOptions: ChartOptions<'line'> = {
   maintainAspectRatio: false,
   plugins: {
     legend: { display: false },
+    tooltip: {
+      backgroundColor: '#fff7f5',
+      titleColor: '#7c2d12',
+      bodyColor: '#9a3412',
+      borderColor: 'rgba(242, 140, 122, 0.25)',
+      borderWidth: 1,
+      padding: 12,
+      displayColors: false,
+    },
   },
   scales: {
-    x: { grid: { display: false } },
+    x: {
+      grid: { display: false },
+      ticks: { color: coralPalette.text },
+    },
     y: {
       beginAtZero: true,
-      ticks: {
+      grid: { color: coralPalette.grid },
+      ticks: { color: coralPalette.text,
         callback: (value) => formatMoney(Number(value)),
       },
     },
@@ -51,12 +77,25 @@ const barOptions: ChartOptions<'bar'> = {
   maintainAspectRatio: false,
   plugins: {
     legend: { display: false },
+    tooltip: {
+      backgroundColor: '#fff7f5',
+      titleColor: '#7c2d12',
+      bodyColor: '#9a3412',
+      borderColor: 'rgba(242, 140, 122, 0.25)',
+      borderWidth: 1,
+      padding: 12,
+    },
   },
   scales: {
-    x: { grid: { display: false } },
+    x: {
+      grid: { display: false },
+      ticks: { color: coralPalette.text },
+    },
     y: {
       beginAtZero: true,
+      grid: { color: coralPalette.grid },
       ticks: {
+        color: coralPalette.text,
         callback: (value) => formatMoney(Number(value)),
       },
     },
@@ -85,8 +124,13 @@ export default function DonorAnalytics() {
       {
         label: 'Donation Value',
         data: data.donationsOverTime.map((point) => point.totalAmount),
-        borderColor: 'rgb(249, 115, 22)',
-        backgroundColor: 'rgba(249, 115, 22, 0.15)',
+        borderColor: coralPalette.strong,
+        backgroundColor: 'rgba(242, 140, 122, 0.18)',
+        pointBackgroundColor: coralPalette.medium,
+        pointBorderColor: '#fff7f5',
+        pointHoverBackgroundColor: coralPalette.strong,
+        pointHoverBorderColor: coralPalette.strong,
+        pointRadius: 4,
         fill: true,
         tension: 0.3,
       },
@@ -98,7 +142,22 @@ export default function DonorAnalytics() {
     datasets: [
       {
         data: data.donationTypeBreakdown.map((item) => item.donationCount),
-        backgroundColor: ['#f97316', '#0ea5e9', '#10b981', '#8b5cf6', '#ec4899', '#f59e0b'],
+        backgroundColor: [
+          coralPalette.strong,
+          coralPalette.terracotta,
+          coralPalette.medium,
+          coralPalette.apricot,
+          coralPalette.rose,
+          coralPalette.soft,
+        ],
+        hoverBackgroundColor: [
+          '#dc6b58',
+          '#aa4f4f',
+          '#e58972',
+          '#d08f4e',
+          '#bb6062',
+          '#eea78e',
+        ],
         borderWidth: 0,
       },
     ],
@@ -110,8 +169,15 @@ export default function DonorAnalytics() {
       {
         label: 'Campaign Value',
         data: data.topCampaigns.map((item) => item.totalAmount),
-        backgroundColor: 'rgba(15, 23, 42, 0.85)',
+        backgroundColor: [
+          coralPalette.strong,
+          coralPalette.terracotta,
+          coralPalette.medium,
+          coralPalette.apricot,
+          coralPalette.rose,
+        ],
         borderRadius: 10,
+        borderSkipped: false,
       },
     ],
   };
@@ -124,41 +190,39 @@ export default function DonorAnalytics() {
             <ArrowLeft className="h-4 w-4" />
             Back to Donor Management
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">DonorAnalytics</h1>
-          <p className="mt-2 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            Aggregated donor trends for staff, including donation growth over time, contribution mix, and the highest-performing campaigns.
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Donor Analytics</h1>
+          
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <div className="card">
-          <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-orange-50 text-orange-500 dark:bg-orange-500/10">
+          <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-[#fff1ed] text-[#f28c7a] dark:bg-[#f28c7a]/10">
             <DollarSign className="h-5 w-5" />
           </div>
           <div className="text-2xl font-bold text-gray-900 dark:text-white">{formatMoney(data.summary.totalDonationValue)}</div>
-          <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">Total contribution value</div>
+          <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">Total Contribution Value</div>
         </div>
         <div className="card">
-          <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-500 dark:bg-blue-500/10">
+          <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-[#fff4f1] text-[#f6a99c] dark:bg-[#f6a99c]/10">
             <BarChart3 className="h-5 w-5" />
           </div>
           <div className="text-2xl font-bold text-gray-900 dark:text-white">{data.summary.totalDonations}</div>
-          <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">Recorded donations</div>
+          <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">Recorded Donations</div>
         </div>
         <div className="card">
-          <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-500 dark:bg-emerald-500/10">
+          <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-[#fff7f5] text-[#e79a8d] dark:bg-[#e79a8d]/10">
             <Users className="h-5 w-5" />
           </div>
           <div className="text-2xl font-bold text-gray-900 dark:text-white">{data.summary.totalSupporters}</div>
-          <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">Total supporters</div>
+          <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">Total Supporters</div>
         </div>
         <div className="card">
-          <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-purple-50 text-purple-500 dark:bg-purple-500/10">
+          <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-[#fff3ef] text-[#f28c7a] dark:bg-[#f28c7a]/10">
             <TrendingUp className="h-5 w-5" />
           </div>
           <div className="text-2xl font-bold text-gray-900 dark:text-white">{data.summary.activeSupporters}</div>
-          <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">Active supporters</div>
+          <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">Active Supporters</div>
         </div>
       </div>
 
@@ -184,8 +248,25 @@ export default function DonorAnalytics() {
               options={{
                 responsive: true,
                 maintainAspectRatio: false,
+                cutout: '62%',
                 plugins: {
-                  legend: { position: 'bottom' },
+                  legend: {
+                    position: 'bottom',
+                    labels: {
+                      color: coralPalette.text,
+                      usePointStyle: false,
+                      boxWidth: 18,
+                      padding: 14,
+                    },
+                  },
+                  tooltip: {
+                    backgroundColor: '#fff7f5',
+                    titleColor: '#7c2d12',
+                    bodyColor: '#9a3412',
+                    borderColor: 'rgba(242, 140, 122, 0.25)',
+                    borderWidth: 1,
+                    padding: 12,
+                  },
                 },
               }}
             />
