@@ -34,6 +34,7 @@ export default function LoginPage() {
           : 'Login successful. Redirecting you now...';
         setSuccessMessage(modalMessage);
         AuthService.setAuthenticated(true);
+        AuthService.setUserEmail(email);
         setShowSuccessModal(true);
         window.setTimeout(() => navigate(returnTo, { replace: true }), 1200);
       } else {
@@ -71,6 +72,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
+                autoComplete="email"
                 className="input-field"
               />
             </label>
@@ -84,6 +86,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   required
+                  autoComplete="current-password"
                   className="input-field pr-10"
                 />
                 <button
