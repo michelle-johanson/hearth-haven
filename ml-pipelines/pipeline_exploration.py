@@ -25,15 +25,15 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # ── EDIT THESE FOUR THINGS ────────────────────────────────────────────────────
 
-from functions.fn_eda_custom import prepare_residents as prepare_fn
+from functions.fn_domain_prep import prepare_residents as prepare_fn
 
-TARGET = 'reintegration_achieved'
-PROBLEM_TYPE = 'classification'
+TARGET = 'progress_percent_latest'
+PROBLEM_TYPE = 'regression'
 OTHER_TARGETS = [
     'risk_escalated',
     'risk_improved',
+    'reintegration_achieved',
     'reintegration_status',
-    'progress_percent_latest',
     'current_risk_num',
     'current_risk_level',
     'initial_risk_num',
