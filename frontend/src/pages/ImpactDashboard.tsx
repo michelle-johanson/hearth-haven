@@ -16,7 +16,7 @@ interface Stats {
 }
 
 function fmt(n: number) {
-  return '\u20B1' + Number(n).toLocaleString('en-PH', { minimumFractionDigits: 0 });
+  return '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 0 });
 }
 
 const kpiCards = [

@@ -44,7 +44,7 @@ export default function RecordModal({
     const value = data[f.key];
 
     if (mode === 'view' || f.readOnly) {
-      return <span className="text-sm text-gray-700 dark:text-gray-300">{fmt(value)}</span>;
+      return <span className="text-sm font-medium text-gray-900 dark:text-white">{fmt(value)}</span>;
     }
 
     if (f.type === 'checkbox') {
@@ -117,7 +117,7 @@ export default function RecordModal({
       <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby={dialogTitleId} onClick={onClose}>
         <div className="modal-body" onClick={(e) => e.stopPropagation()}>
           {/* Top bar */}
-          <div className="mb-6 flex items-start justify-between">
+          <div className="mb-6 flex items-start justify-between border-b border-gray-100 pb-5 dark:border-gray-700">
             <div className="min-w-0 flex-1">
               <h2 id={dialogTitleId} className="text-lg font-bold text-gray-900 dark:text-white">
                 {mode === 'create' ? `New ${title}` : title}
@@ -210,10 +210,10 @@ export default function RecordModal({
           </div>
 
           {/* Fields */}
-          <div className="space-y-4">
+          <div className="space-y-4 rounded-xl bg-gray-50 p-4 dark:bg-white/5">
             {fields.map((f) => (
               <div className="flex flex-col gap-1.5" key={f.key}>
-                <label className="text-sm font-semibold text-gray-800 dark:text-gray-200">{f.label}{f.required && <span className="ml-0.5 text-orange-500">*</span>}</label>
+                <label className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">{f.label}{f.required && <span className="ml-0.5 text-orange-500">*</span>}</label>
                 {renderField(f)}
               </div>
             ))}

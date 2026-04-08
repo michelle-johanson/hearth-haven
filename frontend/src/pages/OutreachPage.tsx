@@ -27,7 +27,7 @@ export default function OutreachPage() {
 
   if (loading) return <div className="flex min-h-[50vh] items-center justify-center text-gray-500 dark:text-gray-400">Loading outreach insights...</div>;
   if (error || !data) return (
-    <div className="mx-auto max-w-4xl px-4 py-16 text-center">
+    <div className="p-4 text-center sm:p-6 lg:p-8">
       <h1 className="text-2xl font-bold">Outreach</h1>
       <p className="mt-2 text-gray-500 dark:text-gray-400">{error || 'No outreach data found.'}</p>
     </div>
@@ -43,7 +43,7 @@ export default function OutreachPage() {
   const maxReach = Math.max(...data.channelBreakdown.map(x => x.reach), 1);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+    <div className="p-4 sm:p-6 lg:p-8">
       <h1 className="text-3xl font-bold">Outreach Insights</h1>
       <p className="mt-1 text-gray-500 dark:text-gray-400">Built for social media managers to prioritize what drives engagement and referrals.</p>
 

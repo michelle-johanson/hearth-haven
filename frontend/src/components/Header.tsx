@@ -53,22 +53,32 @@ function Header({ isAuthenticated }: HeaderProps) {
     navigate('/');
   };
 
-  const navLinks = [
+  const publicNavLinks = [
     { to: '/', label: 'Home' },
     { to: '/impact', label: 'Impact' },
+  ];
+
+  const adminNavLinks = [
     { to: '/admin', label: 'Dashboard' },
     { to: '/cases', label: 'Case Management' },
     { to: '/safehouse-management', label: 'Safehouse Management' },
     { to: '/donors', label: 'Donors' },
     { to: '/outreach', label: 'Outreach' },
+    { to: '/social-media', label: 'Social Media' },
+    { to: '/reports', label: 'Reports' },
   ];
+
+  const adminPrefixes = ['/admin', '/cases', '/safehouse-management', '/donors', '/outreach', '/social-media', '/reports'];
+  const isOnAdminPage = adminPrefixes.some(p => pathname === p || pathname.startsWith(p + '/'));
+
+  const navLinks = isOnAdminPage ? publicNavLinks : [...publicNavLinks, ...adminNavLinks];
 
   return (
     <>
       <nav className="sticky top-0 z-40 border-b border-gray-100 bg-white/95 backdrop-blur-sm dark:border-gray-800 dark:bg-gray-900/95">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 text-gray-900 no-underline hover:text-gray-900 dark:text-white">
+          <Link to="/" className="flex items-center gap-2 text-gray-900 no-underline hover:text-gray-900 dark:text-white dark:hover:text-white">
             <img src={theme === 'dark' ? '/heart-dark.svg' : '/Logo.svg'} alt="The Hearth Project" className="h-8 w-8" />
             <span className="text-lg font-bold tracking-tight">The Hearth Project</span>
           </Link>

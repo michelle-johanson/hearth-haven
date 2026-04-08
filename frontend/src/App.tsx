@@ -12,14 +12,16 @@ import ResidentDetailPage from './pages/ResidentDetailPage';
 import DonatePage from "./pages/DonatePage";
 import ThankYouPage from "./pages/ThankYouPage";
 import DonorsPage from "./pages/DonorPage";
-import AllocationPage from "./pages/AllocationPage";
+import SocialMediaPage from "./pages/SocialMediaPage";
 import ImpactDashboard from "./pages/ImpactDashboard";
 import { AuthService } from "./api/AuthService";
 import OutreachPage from "./pages/OutreachPage";
 import SafehouseManagementPage from "./pages/SafehouseManagementPage";
+import AdminLayout from "./components/AdminLayout";
 import SafehouseDetailPage from "./pages/SafehouseDetailPage";
 import PartnerDetailPage from "./pages/PartnerDetailPage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
+import ReportsPage from "./pages/ReportsPage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import TermsPage from "./pages/TermsPage";
 import TeapotPage from "./pages/TeapotPage";
@@ -73,49 +75,62 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          <Route path="/cases" element={<CasePage />} />
-          <Route path="/cases/:id" element={<ResidentDetailPage />} />
-          <Route
-            path="/admin"
-            element={(
-              <ProtectedRoute>
-                <AdminDashboardPage />
-              </ProtectedRoute>
-            )}
-          />
-          <Route path="/safehouse-management" element={<SafehouseManagementPage />} />
-          <Route path="/safehouse-management/safehouses/:id" element={<SafehouseDetailPage />} />
-          <Route path="/safehouse-management/partners/:id" element={<PartnerDetailPage />} />
+          {/* Admin routes with persistent sidebar */}
+          <Route element={<AdminLayout />}>
+            <Route
+              path="/admin"
+              element={(
+                <ProtectedRoute>
+                  <AdminDashboardPage />
+                </ProtectedRoute>
+              )}
+            />
+            <Route path="/cases" element={<CasePage />} />
+            <Route path="/cases/:id" element={<ResidentDetailPage />} />
+            <Route path="/safehouse-management" element={<SafehouseManagementPage />} />
+            <Route path="/safehouse-management/safehouses/:id" element={<SafehouseDetailPage />} />
+            <Route path="/safehouse-management/partners/:id" element={<PartnerDetailPage />} />
+            <Route
+              path="/donors"
+              element={(
+                <ProtectedRoute>
+                  <DonorsPage />
+                </ProtectedRoute>
+              )}
+            />
+            <Route
+              path="/outreach"
+              element={(
+                <ProtectedRoute>
+                  <OutreachPage />
+                </ProtectedRoute>
+              )}
+            />
+            <Route
+              path="/social-media"
+              element={(
+                <ProtectedRoute>
+                  <SocialMediaPage />
+                </ProtectedRoute>
+              )}
+            />
+            <Route
+              path="/reports"
+              element={(
+                <ProtectedRoute>
+                  <ReportsPage />
+                </ProtectedRoute>
+              )}
+            />
+          </Route>
+
+          {/* Public routes */}
           <Route path="/donate" element={<DonatePage />} />
           <Route path="/donate/thank-you" element={<ThankYouPage />} />
           <Route path="/impact" element={<ImpactDashboard />} />
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/teapot" element={<TeapotPage />} />
-          <Route
-            path="/outreach"
-            element={(
-              <ProtectedRoute>
-                <OutreachPage />
-              </ProtectedRoute>
-            )}
-          />
-          <Route
-            path="/donors"
-            element={(
-              <ProtectedRoute>
-                <DonorsPage />
-              </ProtectedRoute>
-            )}
-          />
-          <Route
-            path="/allocations"
-            element={(
-              <ProtectedRoute>
-                <AllocationPage />
-              </ProtectedRoute>
-            )}
-          />
         </Routes>
       </main>
 
