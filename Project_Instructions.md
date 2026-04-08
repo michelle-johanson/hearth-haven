@@ -256,29 +256,15 @@ A team that demonstrates mastery of these principles across multiple pipelines w
 
 #### Rubric (20 points total)
 
-| Domain                        | Must-Have Requirement                                                                                                                                                            |
-| :---------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Client & Core Operational** | Recommend a name for the new organization.                                                                                                                                       |
-| **Client & Core Operational** | Build a system to manage cases across the full lifecycle, from intake and case assessment through reintegration or placement.                                                    |
-| **Client & Core Operational** | Include documentation tracking for structured counseling sessions (process recordings), home visitations, case conferences, and intervention planning.                           |
-| **Client & Core Operational** | Connect donation activity to outcomes so the client can communicate to donors how their generosity benefits the residents.                                                       |
-| **Client & Core Operational** | Provide technology/data to help the founders make smarter, strategic decisions about their social media presence.                                                                |
-| **Client & Core Operational** | Ensure the system is easy for limited staff to administer, specifically allowing them to create, update, and carefully remove data.                                              |
-| **Web App (IS 413)**          | Build the application using .NET 10 / C# on the back end and React / TypeScript (Vite) on the front end.                                                                         |
-| **Web App (IS 413)**          | Use Azure SQL Database, MySQL, or PostgreSQL for the relational database.                                                                                                        |
-| **Web App (IS 413)**          | Deploy both the web application and the database.                                                                                                                                |
-| **Web App (IS 413)**          | Build Public Pages: Home/Landing Page, Impact/Donor-Facing Dashboard, Login Page, and a Privacy Policy with Cookie Consent.                                                      |
-| **Web App (IS 413)**          | Build Staff Portal Pages: Admin Dashboard, Donors & Contributions, Caseload Inventory, Process Recording forms, Home Visitation & Case Conferences log, and Reports & Analytics. |
-| **Security (IS 414)**         | Secure all public connections using HTTPS and redirect HTTP traffic to HTTPS.                                                                                                    |
-| **Security (IS 414)**         | Provide authentication (username/password) requiring better password policies than the default settings.                                                                         |
-| **Security (IS 414)**         | Implement Role-Based Access Control (RBAC) ensuring only authenticated admin users can add, modify, or delete data.                                                              |
-| **Security (IS 414)**         | Require confirmation before any data can be deleted.                                                                                                                             |
-| **Security (IS 414)**         | Handle credentials safely and ensure they are not included in public code repositories.                                                                                          |
-| **Security (IS 414)**         | Create a customized, GDPR-compliant privacy policy and enable a fully functional GDPR-compliant cookie consent notification.                                                     |
-| **Security (IS 414)**         | Enable the Content-Security-Policy (CSP) HTTP header specifying only necessary sources.                                                                                          |
-| **Machine Learning (IS 455)** | Deliver complete, end-to-end machine learning pipelines integrated into or supported by the web application.                                                                     |
-| **Machine Learning (IS 455)** | Generate both a causal and predictive model for each pipeline.                                                                                                                   |
-| **Machine Learning (IS 455)** | Submit a self-contained Jupyter notebook (`.ipynb`) for each pipeline in your GitHub repository, including all required analytical sections.                                     |
+Your score will be based on the number of complete, quality pipelines your team delivers. Each pipeline will be evaluated using the following criteria aligned with the full ML pipeline:
+
+| Pipeline Stage                                  | What We’re Evaluating                                                                                                                                                                                           |
+| :---------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Problem Framing**                             | Is the business problem clearly stated? Does it matter to the organization? Is the choice of predictive vs. explanatory approach explicitly justified?                                                          |
+| **Data Acquisition, Preparation & Exploration** | Is the data explored thoroughly? Are missing values, outliers, and feature engineering handled well? Is the data preparation reproducible as a pipeline? Are joins across tables done correctly and documented? |
+| **Modeling & Feature Selection**                | Is the model appropriate for the stated goal (prediction or explanation)? Are multiple approaches considered or compared? Is feature selection thoughtful and justified?                                        |
+| **Evaluation & Selection**                      | Are appropriate metrics used? Is the model validated properly (e.g., train/test split, cross-validation)? Are results interpreted in business terms, not just statistical terms?                                |
+| **Deployment & Integration**                    | Is the model deployed and accessible? Is it integrated with the web application in a meaningful way? Does it provide value to end users?                                                                        |
 
 #### What to Submit
 
