@@ -89,6 +89,19 @@ public class DonorController : ControllerBase
         createdAt = d.DonationDate.ToString("yyyy-MM-dd"),
     };
 
+    private static string FallbackDisplayName(string? email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return "Supporter";
+
+        var localPart = email.Split('@')[0].Trim();
+        if (string.IsNullOrWhiteSpace(localPart))
+            return "Supporter";
+
+        var cleaned = localPart.Replace('.', ' ').Replace('_', ' ').Replace('-', ' ').Trim();
+        return string.IsNullOrWhiteSpace(cleaned) ? "Supporter" : CultureInfo.InvariantCulture.TextInfo.ToTitleCase(cleaned);
+    }
+
     private void DeleteDonationGraph(int donationId)
     {
         var allocations = _db.DonationAllocations.Where(a => a.DonationId == donationId).ToList();
@@ -232,6 +245,92 @@ public class DonorController : ControllerBase
         });
     }
 
+    // GET /Donor/Portal
+    [HttpGet("Portal")]
+    public IActionResult GetPortal(string? email = null)
+    {
+        var identityEmail = User?.Identity?.Name;
+        var resolvedEmail = string.IsNullOrWhiteSpace(identityEmail) ? email : identityEmail;
+
+        if (string.IsNullOrWhiteSpace(resolvedEmail))
+            return Unauthorized(new { message = "A logged-in donor email is required." });
+
+        var normalizedEmail = resolvedEmail.Trim().ToLowerInvariant();
+
+        var matchingSupporters = _db.Supporters
+            .AsNoTracking()
+            .Where(s => s.Email != null && s.Email.ToLower() == normalizedEmail)
+            .OrderByDescending(s => s.CreatedAt)
+            .ToList();
+
+        if (matchingSupporters.Count == 0)
+        {
+            return Ok(new
+            {
+                displayName = FallbackDisplayName(resolvedEmail),
+                email = resolvedEmail,
+                supporterId = (int?)null,
+                supporterType = (string?)null,
+                status = "Active",
+                totalDonations = 0,
+                totalDonationValue = 0m,
+                history = Array.Empty<object>(),
+            });
+        }
+
+        var primarySupporter = matchingSupporters
+            .OrderByDescending(s => !string.IsNullOrWhiteSpace(s.DisplayName))
+            .ThenByDescending(s => s.Status == "Active")
+            .ThenByDescending(s => s.CreatedAt)
+            .First();
+
+        var supporterIds = matchingSupporters
+            .Select(s => s.SupporterId)
+            .ToList();
+
+        var donations = _db.Donations
+            .Include(d => d.Supporter)
+            .Where(d => supporterIds.Contains(d.SupporterId))
+            .OrderByDescending(d => d.DonationDate)
+            .ToList();
+
+        var history = donations
+            .Select(d =>
+            {
+                var totalAllocated = _db.DonationAllocations
+                    .Where(a => a.DonationId == d.DonationId)
+                    .Sum(a => (decimal?)a.AmountAllocated) ?? 0m;
+
+                return new
+                {
+                    donationId = d.DonationId,
+                    donationType = d.DonationType,
+                    donationDate = d.DonationDate.ToString("yyyy-MM-dd"),
+                    amount = d.Amount,
+                    estimatedValue = d.EstimatedValue,
+                    currencyCode = d.CurrencyCode ?? "USD",
+                    isRecurring = d.IsRecurring,
+                    channelSource = d.ChannelSource,
+                    campaignName = d.CampaignName,
+                    notes = d.Notes,
+                    totalAllocated,
+                };
+            })
+            .ToList();
+
+        return Ok(new
+        {
+            displayName = primarySupporter.DisplayName,
+            email = primarySupporter.Email,
+            supporterId = primarySupporter.SupporterId,
+            supporterType = primarySupporter.SupporterType,
+            status = primarySupporter.Status,
+            totalDonations = history.Count,
+            totalDonationValue = donations.Sum(DonationValue),
+            history,
+        });
+    }
+
     // GET /Donor/Supporters
     [HttpGet("Supporters")]
     public IActionResult GetSupporters(
@@ -362,6 +461,7 @@ public class DonorController : ControllerBase
 
         var donations = query
             .OrderByDescending(d => d.DonationDate)
+            .ThenByDescending(d => d.DonationId)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToList()
