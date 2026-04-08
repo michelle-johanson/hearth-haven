@@ -1,0 +1,26 @@
+{
+  "top_value_drivers": [
+    {
+      "feature": "monetary_donation_count",
+      "coefficient": 4522.270925161966
+    },
+    {
+      "feature": "status_Inactive",
+      "coefficient": 901.906027754542
+    },
+    {
+      "feature": "supporter_type_MonetaryDonor",
+      "coefficient": 491.96025836654303
+    },
+    {
+      "feature": "unique_campaigns",
+      "coefficient": 259.7267828545089
+    },
+    {
+      "feature": "supporter_type_SocialMediaAdvocate",
+      "coefficient": 140.59061329713018
+    }
+  ],
+  "model_r2": 0.956,
+  "model_version": "donor_retention_v1"
+}
