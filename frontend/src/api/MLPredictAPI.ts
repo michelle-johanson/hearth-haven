@@ -22,6 +22,30 @@ export const fetchReintegrationPrediction = async (
   return await response.json();
 };
 
+// ── Top reintegration candidates (batch ranked) ──────────────────────────────
+
+export interface TopReintegrationCandidate {
+  residentId: number;
+  caseControlNo: string;
+  internalCode: string | null;
+  caseCategory: string;
+  assignedSocialWorker: string | null;
+  safehouseName: string | null;
+  readinessScore: number;
+  prediction: ReintegrationPrediction;
+}
+
+export const fetchTopReintegrationCandidates = async (
+  limit = 10,
+): Promise<TopReintegrationCandidate[]> => {
+  const response = await apiFetch(
+    `${API_BASE_URL}/MLPredict/reintegration/top-candidates?limit=${limit}`,
+    { method: 'POST' },
+  );
+  if (!response.ok) throw new Error(`ML batch prediction failed: ${response.status}`);
+  return await response.json();
+};
+
 // ── Progress ──────────────────────────────────────────────────────────────────
 
 export interface ProgressPrediction {

@@ -11,6 +11,7 @@ import {
   DashboardStats, SafehouseOccupancy, DashboardIncident, DashboardVisitation,
   DashboardSession, DashboardConference, DashboardHighRiskResident, DashboardDonation,
 } from '../api/AdminDashboardAPI';
+import TopReintegrationCandidatesCard from '../components/TopReintegrationCandidatesCard';
 
 function fmt(n: number) {
   return '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 0 });
@@ -216,6 +217,11 @@ export default function AdminDashboardPage() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Top Reintegration Candidates (ML-ranked) */}
+      <div className="mt-6">
+        <TopReintegrationCandidatesCard />
       </div>
 
       {/* Two-column: Recent Incidents + Concerning Sessions */}
