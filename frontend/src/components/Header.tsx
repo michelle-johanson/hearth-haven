@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthService, type CurrentUser } from '../api/AuthService';
-import { Menu, X, Heart, Sun, Moon, Monitor } from 'lucide-react';
+import { Menu, X, Heart, Sun, Moon, Monitor, UserRound } from 'lucide-react';
 import { useTheme } from '../ThemeContext';
 import { AppRoles, canShowLink, getCurrentRole, headerLinks } from '../authz';
 
@@ -63,8 +63,7 @@ function Header({ isAuthenticated, currentUser }: HeaderProps) {
   const visibleLinks = headerLinks.filter((link) => canShowLink(link, isAuthenticated, role));
   const navLinks = visibleLinks.filter((link) => !['/profile', '/login', '/register', '/donate'].includes(link.to));
   const userName = currentUser?.displayName ?? null;
-  const primaryActionLabel = role === AppRoles.Admin ? 'Dashboard' : 'My Donations';
-  const primaryActionTo = role === AppRoles.Admin ? '/admin' : '/profile';
+  const isStaffRole = role === AppRoles.Admin || role === AppRoles.CaseManager || role === AppRoles.DonationsManager || role === AppRoles.OutreachManager;
 
   return (
     <>
@@ -108,7 +107,11 @@ function Header({ isAuthenticated, currentUser }: HeaderProps) {
               ) : (
                 <>
                   {userName && <span className="hidden max-w-[12rem] truncate text-sm font-medium text-gray-700 dark:text-gray-300 xl:inline">Hi, {userName}</span>}
-                  <Link to={primaryActionTo} className="btn-secondary px-4 py-2 text-sm no-underline">{primaryActionLabel}</Link>
+                  <Link to="/profile" className="btn-secondary px-4 py-2 text-sm no-underline">
+                    <UserRound className="h-4 w-4" />
+                    Profile
+                  </Link>
+                  {isStaffRole && <Link to="/admin" className="btn-secondary px-4 py-2 text-sm no-underline">Dashboard</Link>}
                   <button className="btn-ghost" onClick={handleLogout}>Logout</button>
                 </>
               )}
@@ -160,7 +163,11 @@ function Header({ isAuthenticated, currentUser }: HeaderProps) {
               ) : (
                 <>
                   {userName && <p className="px-1 text-sm font-medium text-gray-700 dark:text-gray-300">Hi, {userName}</p>}
-                  <Link to={primaryActionTo} className="btn-secondary w-full no-underline">{primaryActionLabel}</Link>
+                  <Link to="/profile" className="btn-secondary w-full no-underline">
+                    <UserRound className="h-4 w-4" />
+                    Profile
+                  </Link>
+                  {isStaffRole && <Link to="/admin" className="btn-secondary w-full no-underline">Dashboard</Link>}
                   <button className="btn-secondary w-full" onClick={handleLogout}>Logout</button>
                 </>
               )}

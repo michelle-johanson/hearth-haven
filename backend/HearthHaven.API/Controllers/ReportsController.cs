@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HearthHaven.API.Controllers;
 
-[Authorize(Roles = AppRoles.Admin)]
+[Authorize(Roles = AppRoles.Admin + "," + AppRoles.OutreachManager)]
 [Route("[controller]")]
 [ApiController]
 public class ReportsController : ControllerBase

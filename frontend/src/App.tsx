@@ -24,6 +24,7 @@ import PartnerDetailPage from "./pages/PartnerDetailPage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
 import ReportsPage from "./pages/ReportsPage";
 import AllocationPage from "./pages/AllocationPage";
+import AdminUsersPage from "./pages/AdminUsersPage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import TermsPage from "./pages/TermsPage";
 import TeapotPage from "./pages/TeapotPage";
@@ -90,6 +91,28 @@ function ScrollToTop() {
   return null;
 }
 
+function getStaffLandingRoute(user: CurrentUser | null): string {
+  const roles = user?.roles ?? [];
+
+  if (roles.includes(AppRoles.Admin)) {
+    return '/admin';
+  }
+
+  if (roles.includes(AppRoles.CaseManager)) {
+    return '/cases';
+  }
+
+  if (roles.includes(AppRoles.DonationsManager)) {
+    return '/donors';
+  }
+
+  if (roles.includes(AppRoles.OutreachManager)) {
+    return '/outreach';
+  }
+
+  return '/profile';
+}
+
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
@@ -150,8 +173,23 @@ function App() {
             <Route
               path="/admin"
               element={(
+                <ProtectedRoute
+                  isAuthenticated={isAuthenticated}
+                  sessionReady={sessionReady}
+                  currentUser={currentUser}
+                  allowedRoles={[AppRoles.Admin, AppRoles.CaseManager, AppRoles.DonationsManager, AppRoles.OutreachManager]}
+                >
+                  {getCurrentRole(currentUser) === AppRoles.Admin
+                    ? <AdminDashboardPage />
+                    : <Navigate to={getStaffLandingRoute(currentUser)} replace />}
+                </ProtectedRoute>
+              )}
+            />
+            <Route
+              path="/admin/users"
+              element={(
                 <ProtectedRoute isAuthenticated={isAuthenticated} sessionReady={sessionReady} currentUser={currentUser} allowedRoles={[AppRoles.Admin]}>
-                  <AdminDashboardPage />
+                  <AdminUsersPage />
                 </ProtectedRoute>
               )}
             />
@@ -235,6 +273,14 @@ function App() {
                 </ProtectedRoute>
               )}
             />
+            <Route
+              path="/donor-analytics"
+              element={(
+                <ProtectedRoute isAuthenticated={isAuthenticated} sessionReady={sessionReady} currentUser={currentUser} allowedRoles={[AppRoles.Admin, AppRoles.DonationsManager]}>
+                  <DonorAnalytics />
+                </ProtectedRoute>
+              )}
+            />
           </Route>
 
           {/* Public routes */}
@@ -258,14 +304,6 @@ function App() {
             element={(
               <ProtectedRoute isAuthenticated={isAuthenticated} sessionReady={sessionReady} currentUser={currentUser}>
                 <ProfilePage />
-              </ProtectedRoute>
-            )}
-          />
-          <Route
-            path="/donor-analytics"
-            element={(
-              <ProtectedRoute isAuthenticated={isAuthenticated} sessionReady={sessionReady} currentUser={currentUser} allowedRoles={[AppRoles.Admin, AppRoles.DonationsManager]}>
-                <DonorAnalytics />
               </ProtectedRoute>
             )}
           />
