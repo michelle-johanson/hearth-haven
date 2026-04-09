@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { AuthService } from '../api/AuthService';
-import { Menu, X, Heart, Sun, Moon, Monitor } from 'lucide-react';
+import { AuthService, type CurrentUser } from '../api/AuthService';
+import { Menu, X, Heart, Sun, Moon, Monitor, UserRound } from 'lucide-react';
 import { useTheme } from '../ThemeContext';
-import { API_BASE_URL } from '../api/config';
+import { AppRoles, canShowLink, getCurrentRole, headerLinks } from '../authz';
 
 type HeaderProps = {
   isAuthenticated: boolean;
+  currentUser: CurrentUser | null;
 };
 
 function ThemeToggle() {
@@ -39,12 +40,12 @@ function ThemeToggle() {
   );
 }
 
-function Header({ isAuthenticated }: HeaderProps) {
+function Header({ isAuthenticated, currentUser }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [userName, setUserName] = useState(AuthService.getUserName());
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { theme } = useTheme();
+  const role = getCurrentRole(currentUser);
 
   const isActive = (to: string) =>
     to === '/' ? pathname === '/' : pathname.startsWith(to);
@@ -55,73 +56,27 @@ function Header({ isAuthenticated }: HeaderProps) {
     navigate('/');
   };
 
-  const publicNavLinks = [
-    { to: '/', label: 'Home' },
-    { to: '/impact', label: 'Impact' },
-  ];
-
-  const adminNavLinks = [
-    { to: '/admin', label: 'Dashboard' },
-    { to: '/cases', label: 'Case Management' },
-    { to: '/safehouse-management', label: 'Safehouse Management' },
-    { to: '/donors', label: 'Donors' },
-    { to: '/outreach', label: 'Outreach' },
-    { to: '/social-media', label: 'Social Media' },
-    { to: '/reports', label: 'Reports' },
-  ];
-
-  const adminPrefixes = ['/admin', '/cases', '/safehouse-management', '/donors', '/outreach', '/social-media', '/reports'];
-  const isOnAdminPage = adminPrefixes.some(p => pathname === p || pathname.startsWith(p + '/'));
-
-  const navLinks = isOnAdminPage ? publicNavLinks : [...publicNavLinks, ...adminNavLinks];
   useEffect(() => {
-    const syncName = () => setUserName(AuthService.getUserName());
-    window.addEventListener('auth-change', syncName);
+    setMenuOpen(false);
+  }, [pathname]);
 
-    return () => window.removeEventListener('auth-change', syncName);
-  }, []);
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      setUserName(null);
-      return;
-    }
-
-    const email = AuthService.getUserEmail();
-    if (!email) {
-      return;
-    }
-
-    fetch(`${API_BASE_URL}/Donor/Portal?email=${encodeURIComponent(email)}`, { credentials: 'include' })
-      .then(async (res) => {
-        if (!res.ok) {
-          return null;
-        }
-        return res.json();
-      })
-      .then((data) => {
-        if (data?.displayName) {
-          AuthService.setUserName(data.displayName);
-          setUserName(data.displayName);
-        }
-      })
-      .catch(() => {
-        // Ignore header lookup failures so nav/header work remains stable.
-      });
-  }, [isAuthenticated]);
+  const visibleLinks = headerLinks.filter((link) => canShowLink(link, isAuthenticated, role));
+  const navLinks = visibleLinks.filter((link) => !['/profile', '/login', '/register', '/donate'].includes(link.to));
+  const userName = currentUser?.displayName ?? null;
+  const isStaffRole = role === AppRoles.Admin || role === AppRoles.CaseManager || role === AppRoles.DonationsManager || role === AppRoles.OutreachManager;
 
   return (
     <>
       <nav className="sticky top-0 z-40 border-b border-gray-100 bg-white/95 backdrop-blur-sm dark:border-gray-800 dark:bg-gray-900/95">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
+        <div className="mx-auto flex h-[57px] w-full max-w-7xl items-center justify-between gap-3 px-3 sm:px-6">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 text-gray-900 no-underline hover:text-gray-900 dark:text-white dark:hover:text-white">
+          <Link to="/" className="flex min-w-0 items-center gap-2 text-gray-900 no-underline hover:text-gray-900 dark:text-white dark:hover:text-white">
             <img src={theme === 'dark' ? '/heart-dark.svg' : '/Logo.svg'} alt="The Hearth Project" className="h-8 w-8" />
-            <span className="text-lg font-bold tracking-tight">The Hearth Project</span>
+            <span className="truncate text-base font-bold tracking-tight sm:text-lg">The Hearth Project</span>
           </Link>
 
           {/* Desktop nav */}
-          <div className="hidden items-center gap-1 md:flex">
+          <div className="hidden items-center gap-1 lg:flex">
             {navLinks.map(({ to, label }) => (
               <Link
                 key={to}
@@ -137,34 +92,37 @@ function Header({ isAuthenticated }: HeaderProps) {
             ))}
           </div>
 
-          {/* Desktop actions */}
-          <div className="hidden items-center gap-2 md:flex">
-            {isAuthenticated && userName && (
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Hi, {userName.split(' ')[0]}</span>
-            )}
-            <Link to="/donate" className="btn-primary no-underline">
-              <Heart className="h-4 w-4" />
-              Donate
-            </Link>
-            {!isAuthenticated ? (
-              <>
-                <Link to="/login" className="btn-ghost no-underline">Sign in</Link>
-              </>
-            ) : (
-              <>
-                <Link to="/profile" className="btn-secondary no-underline">My Donations</Link>
-                <button className="btn-ghost" onClick={handleLogout}>Logout</button>
-              </>
-            )}
-          </div>
-
-          {/* Theme toggle + hamburger — pinned to far right */}
-          <div className="flex items-center gap-2">
+          {/* Actions */}
+          <div className="flex shrink-0 items-center gap-2 lg:gap-3">
+            <div className="hidden items-center gap-2 lg:flex xl:gap-3">
+              <Link to="/donate" className="btn-primary px-4 py-2 text-sm no-underline">
+                <Heart className="h-4 w-4" />
+                Donate
+              </Link>
+              {!isAuthenticated ? (
+                <>
+                  <Link to="/login" className="btn-ghost no-underline">Sign in</Link>
+                  <Link to="/register" className="btn-secondary px-4 py-2 text-sm no-underline">Register</Link>
+                </>
+              ) : (
+                <>
+                  {userName && <span className="hidden max-w-[12rem] truncate text-sm font-medium text-gray-700 dark:text-gray-300 xl:inline">Hi, {userName}</span>}
+                  <Link to="/profile" className="btn-secondary px-4 py-2 text-sm no-underline">
+                    <UserRound className="h-4 w-4" />
+                    Profile
+                  </Link>
+                  {isStaffRole && <Link to="/admin" className="btn-secondary px-4 py-2 text-sm no-underline">Dashboard</Link>}
+                  <button className="btn-ghost" onClick={handleLogout}>Logout</button>
+                </>
+              )}
+            </div>
             <ThemeToggle />
             <button
-              className="btn-icon md:hidden"
+              className="btn-icon lg:hidden"
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label="Toggle menu"
+              aria-expanded={menuOpen}
+              aria-controls="mobile-header-menu"
             >
               {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
@@ -174,46 +132,51 @@ function Header({ isAuthenticated }: HeaderProps) {
 
       {/* Mobile menu */}
       {menuOpen && (
-        <div className="fixed inset-0 top-[57px] z-30 bg-white dark:bg-gray-900 md:hidden">
-          <div className="flex flex-col gap-1 border-b border-gray-100 px-4 py-4 dark:border-gray-800">
-            {navLinks.map(({ to, label }) => (
-              <Link
-                key={to}
-                to={to}
-                onClick={() => setMenuOpen(false)}
-                className={`rounded-lg px-3 py-2.5 text-base font-medium no-underline transition ${
-                  isActive(to)
-                    ? 'ring-2 ring-orange-500 text-orange-600 dark:text-orange-400'
-                    : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800'
-                }`}
-              >
-                {label}
-              </Link>
-            ))}
-          </div>
-
-          <div className="flex flex-col gap-2 px-4 py-4">
-            <div className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-800">
-              <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Theme</span>
-              <ThemeToggle />
+        <div className="fixed inset-0 top-[57px] z-30 bg-black/30 lg:hidden" onClick={() => setMenuOpen(false)}>
+          <div id="mobile-header-menu" className="ml-auto h-full w-full max-w-sm overflow-y-auto border-l border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900" onClick={(event) => event.stopPropagation()}>
+            <div className="flex flex-col gap-1 border-b border-gray-100 px-4 py-4 dark:border-gray-800">
+              {navLinks.map(({ to, label }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  className={`rounded-lg px-3 py-2.5 text-base font-medium no-underline transition ${
+                    isActive(to)
+                      ? 'ring-2 ring-orange-500 text-orange-600 dark:text-orange-400'
+                      : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  {label}
+                </Link>
+              ))}
             </div>
-            <Link to="/donate" onClick={() => setMenuOpen(false)} className="btn-primary w-full no-underline">
-              <Heart className="h-4 w-4" />
-              Donate
-            </Link>
-            {!isAuthenticated ? (
-              <>
-                <Link to="/login" onClick={() => setMenuOpen(false)} className="btn-secondary w-full no-underline">Sign in</Link>
-              </>
-            ) : (
-              <>
-                {userName && (
-                  <p className="px-1 text-sm font-medium text-gray-700 dark:text-gray-300">Hi, {userName.split(' ')[0]}</p>
-                )}
-                <Link to="/profile" onClick={() => setMenuOpen(false)} className="btn-secondary w-full no-underline">My Donations</Link>
-                <button className="btn-secondary w-full" onClick={handleLogout}>Logout</button>
-              </>
-            )}
+
+            <div className="flex flex-col gap-2 px-4 py-4">
+              <Link to="/donate" className="btn-primary w-full no-underline">
+                <Heart className="h-4 w-4" />
+                Donate
+              </Link>
+              {!isAuthenticated ? (
+                <>
+                  <Link to="/login" className="btn-secondary w-full no-underline">Sign in</Link>
+                  <Link to="/register" className="btn-secondary w-full no-underline">Register</Link>
+                </>
+              ) : (
+                <>
+                  {userName && <p className="px-1 text-sm font-medium text-gray-700 dark:text-gray-300">Hi, {userName}</p>}
+                  <Link to="/profile" className="btn-secondary w-full no-underline">
+                    <UserRound className="h-4 w-4" />
+                    Profile
+                  </Link>
+                  {isStaffRole && <Link to="/admin" className="btn-secondary w-full no-underline">Dashboard</Link>}
+                  <button className="btn-secondary w-full" onClick={handleLogout}>Logout</button>
+                </>
+              )}
+
+              <div className="mt-2 flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-800">
+                <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Theme</span>
+                <ThemeToggle />
+              </div>
+            </div>
           </div>
         </div>
       )}
