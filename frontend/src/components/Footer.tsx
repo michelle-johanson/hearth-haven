@@ -39,10 +39,10 @@ function Footer({ isAuthenticated, currentUser }: FooterProps) {
                 Emergency (General)
               </div>
               <p className="mb-1">
-                USA: <a href="tel:911" className="text-orange-500 hover:text-orange-600">911</a>
+                USA: <a href="tel:911" className="text-orange-500 underline underline-offset-2 decoration-2 hover:text-orange-600">911</a>
               </p>
               <p className="mb-3">
-                Malaysia: <a href="tel:999" className="text-orange-500 hover:text-orange-600">999</a>
+                Malaysia: <a href="tel:999" className="text-orange-500 underline underline-offset-2 decoration-2 hover:text-orange-600">999</a>
               </p>
 
               <div className="mb-1 flex items-center gap-2 font-semibold text-orange-500">
@@ -51,10 +51,10 @@ function Footer({ isAuthenticated, currentUser }: FooterProps) {
               </div>
               <p className="mb-1">
                 USA (RAINN National Sexual Assault Hotline):{' '}
-                <a href="tel:18006564673" className="text-orange-500 hover:text-orange-600">1-800-656-4673</a>
+                <a href="tel:18006564673" className="text-orange-500 underline underline-offset-2 decoration-2 hover:text-orange-600">1-800-656-4673</a>
               </p>
               <p>
-                Malaysia (Talian Kasih): <a href="tel:15999" className="text-orange-500 hover:text-orange-600">15999</a>
+                Malaysia (Talian Kasih): <a href="tel:15999" className="text-orange-500 underline underline-offset-2 decoration-2 hover:text-orange-600">15999</a>
               </p>
             </div>
           </div>
