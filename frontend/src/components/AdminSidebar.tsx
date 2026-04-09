@@ -1,17 +1,25 @@
 import { Link, useLocation } from 'react-router-dom';
 import {
-  LayoutDashboard, Users, Home, Heart, Globe, Share2, FileText,
+  LayoutDashboard, Users, Home, Heart, Globe, Share2, FileText, HandCoins, BarChart3,
   X, PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
+import { useAuthSession } from '../authSession';
+import { AppRoles, canShowLink, getCurrentRole, type NavLink } from '../authz';
 
-const navItems = [
-  { to: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/cases', label: 'Cases', icon: Users },
-  { to: '/safehouse-management', label: 'Safehouses', icon: Home },
-  { to: '/donors', label: 'Donors', icon: Heart },
-  { to: '/outreach', label: 'Outreach', icon: Globe },
-  { to: '/social-media', label: 'Social Media', icon: Share2 },
-  { to: '/reports', label: 'Reports', icon: FileText },
+type SidebarItem = NavLink & {
+  icon: React.ComponentType<{ className?: string }>;
+};
+
+const navItems: SidebarItem[] = [
+  { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, roles: [AppRoles.Admin] },
+  { to: '/cases', label: 'Cases', icon: Users, roles: [AppRoles.Admin, AppRoles.CaseManager] },
+  { to: '/safehouse-management', label: 'Safehouses', icon: Home, roles: [AppRoles.Admin, AppRoles.CaseManager] },
+  { to: '/donors', label: 'Donors', icon: Heart, roles: [AppRoles.Admin, AppRoles.DonationsManager] },
+  { to: '/allocations', label: 'Allocations', icon: HandCoins, roles: [AppRoles.Admin, AppRoles.DonationsManager] },
+  { to: '/donor-analytics', label: 'Donor Analytics', icon: BarChart3, roles: [AppRoles.Admin, AppRoles.DonationsManager] },
+  { to: '/outreach', label: 'Outreach', icon: Globe, roles: [AppRoles.Admin, AppRoles.OutreachManager] },
+  { to: '/social-media', label: 'Social Media', icon: Share2, roles: [AppRoles.Admin, AppRoles.OutreachManager] },
+  { to: '/reports', label: 'Reports', icon: FileText, roles: [AppRoles.Admin, AppRoles.OutreachManager] },
 ];
 
 type AdminSidebarProps = {
@@ -23,13 +31,16 @@ type AdminSidebarProps = {
 
 function AdminSidebar({ open, onClose, collapsed, onToggleCollapse }: AdminSidebarProps) {
   const { pathname } = useLocation();
+  const { isAuthenticated, currentUser } = useAuthSession();
+  const role = getCurrentRole(currentUser);
+
+  const visibleItems = navItems.filter((item) => canShowLink(item, isAuthenticated, role));
 
   const isActive = (to: string) =>
     to === '/admin' ? pathname === '/admin' : pathname.startsWith(to);
 
   return (
     <>
-      {/* Mobile backdrop */}
       {open && (
         <div
           className="fixed inset-x-0 top-[57px] bottom-0 z-20 bg-black/30 lg:hidden"
@@ -37,20 +48,17 @@ function AdminSidebar({ open, onClose, collapsed, onToggleCollapse }: AdminSideb
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={`fixed top-[57px] bottom-0 left-0 z-30 flex shrink-0 flex-col border-r border-gray-200 bg-white transition-all duration-200 dark:border-gray-700 dark:bg-gray-900 lg:static lg:top-0 lg:translate-x-0 ${
           collapsed ? 'w-16' : 'w-60'
         } ${open ? 'translate-x-0' : '-translate-x-full'}`}
       >
-        {/* Header with collapse toggle */}
         <div className={`flex items-center pt-3 pb-2 lg:pt-6 ${collapsed ? 'justify-center px-2' : 'justify-between px-5'}`}>
           {!collapsed && (
             <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Admin
             </h2>
           )}
-          {/* Mobile close button */}
           <button
             className="btn-icon lg:hidden"
             onClick={onClose}
@@ -58,7 +66,6 @@ function AdminSidebar({ open, onClose, collapsed, onToggleCollapse }: AdminSideb
           >
             <X className="h-4 w-4" />
           </button>
-          {/* Desktop collapse toggle */}
           <button
             onClick={onToggleCollapse}
             className="btn-icon hidden lg:inline-flex"
@@ -71,7 +78,7 @@ function AdminSidebar({ open, onClose, collapsed, onToggleCollapse }: AdminSideb
 
         <nav className={`flex-1 py-2 ${collapsed ? 'px-2' : 'px-5'}`}>
           <ul className="space-y-1">
-            {navItems.map(({ to, label, icon: Icon }) => (
+            {visibleItems.map(({ to, label, icon: Icon }) => (
               <li key={to}>
                 <Link
                   to={to}

@@ -122,14 +122,6 @@ export const headerLinks: NavLink[] = [
   { to: '/impact', label: 'Impact' },
   { to: '/donate', label: 'Donate' },
   { to: '/profile', label: 'My Donations', authRequired: true },
-  { to: '/admin', label: 'Dashboard', roles: [AppRoles.Admin] },
-  { to: '/cases', label: 'Case Management', roles: [AppRoles.Admin, AppRoles.CaseManager] },
-  { to: '/safehouse-management', label: 'Safehouse Management', roles: [AppRoles.Admin, AppRoles.CaseManager] },
-  { to: '/donors', label: 'Donors', roles: [AppRoles.Admin, AppRoles.DonationsManager] },
-  { to: '/allocations', label: 'Allocations', roles: [AppRoles.Admin, AppRoles.DonationsManager] },
-  { to: '/outreach', label: 'Outreach', roles: [AppRoles.Admin, AppRoles.OutreachManager] },
-  { to: '/social-media', label: 'Social Media', roles: [AppRoles.Admin, AppRoles.OutreachManager] },
-  { to: '/reports', label: 'Reports', roles: [AppRoles.Admin, AppRoles.OutreachManager] },
 ];
 
 export const footerLinks: NavLink[] = [
