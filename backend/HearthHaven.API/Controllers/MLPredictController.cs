@@ -681,6 +681,181 @@ public class MLPredictController : ControllerBase
         };
     }
 
+    // ── Top lapse-risk donors (batch) ─────────────────────────────────────────
+
+    /// <summary>
+    /// Score every active supporter with the donor-lapse model and return the
+    /// top N ranked by lapse_score descending.
+    ///
+    /// Mirrors the reintegration batch endpoint's shape: one query for
+    /// supporters, one query for all related donations, then parallel ML calls
+    /// via Task.WhenAll. Skips supporters whose ML call fails so a single
+    /// inference error doesn't blank the whole list.
+    /// </summary>
+    [HttpPost("donors/top-lapse-risk")]
+    public async Task<IActionResult> GetTopLapseRiskDonors([FromQuery] int limit = 5)
+    {
+        if (limit <= 0) limit = 5;
+
+        // 1. Eligible supporters: active status only.
+        var supporters = await _db.Supporters
+            .Where(s => s.Status == "Active")
+            .ToListAsync();
+
+        if (supporters.Count == 0)
+        {
+            return Ok(Array.Empty<object>());
+        }
+
+        var ids = supporters.Select(s => s.SupporterId).ToList();
+
+        // 2. Bulk-fetch all donations for these supporters in ONE query and
+        //    group by SupporterId so BuildDonorBaseFeatures becomes in-memory.
+        var donationsBySupporter = (await _db.Donations
+                .Where(d => ids.Contains(d.SupporterId))
+                .ToListAsync())
+            .GroupBy(d => d.SupporterId)
+            .ToDictionary(g => g.Key, g => (IReadOnlyList<Donation>)g.ToList());
+
+        // 3. Score each supporter in parallel — DbContext work is done, only
+        //    HttpClient calls remain, and HttpClient is safe to use concurrently.
+        var scoringTasks = supporters.Select(async s =>
+        {
+            var donations = donationsBySupporter.GetValueOrDefault(s.SupporterId)
+                ?? Array.Empty<Donation>();
+
+            // Lapse model: base features only (days_since_last_donation is a
+            // direct-leakage feature excluded by the training notebook).
+            var features = BuildDonorBaseFeatures(s, donations);
+
+            var (ok, body) = await ProxyToMlRaw("predict/donor-lapse", new
+            {
+                supporter_id = s.SupporterId,
+                features,
+            });
+            return (supporter: s, ok, body);
+        });
+
+        var results = await Task.WhenAll(scoringTasks);
+
+        // 4. Parse, sort by lapse_score desc, take top N, project to display shape.
+        var ranked = results
+            .Where(x => x.ok)
+            .Select(x =>
+            {
+                var prediction = JsonSerializer.Deserialize<JsonElement>(x.body);
+                var score = prediction.TryGetProperty("lapse_score", out var s) && s.ValueKind == JsonValueKind.Number
+                    ? s.GetDouble()
+                    : 0.0;
+                return new
+                {
+                    supporterId   = x.supporter.SupporterId,
+                    displayName   = x.supporter.DisplayName,
+                    supporterType = x.supporter.SupporterType,
+                    country       = x.supporter.Country,
+                    region        = x.supporter.Region,
+                    status        = x.supporter.Status,
+                    lapseScore    = score,
+                    prediction,
+                };
+            })
+            .OrderByDescending(x => x.lapseScore)
+            .Take(limit)
+            .ToList();
+
+        return Ok(ranked);
+    }
+
+    // ── Top upgrade-potential donors (batch) ──────────────────────────────────
+
+    /// <summary>
+    /// Score every active supporter with the donor-upgrade model and return the
+    /// top N ranked by upgrade_score descending. Same shape as the lapse-risk
+    /// endpoint but the upgrade model includes days_since_last_donation, so we
+    /// compute that per supporter from the bulk-fetched donations list.
+    /// </summary>
+    [HttpPost("donors/top-upgrade-potential")]
+    public async Task<IActionResult> GetTopUpgradePotentialDonors([FromQuery] int limit = 5)
+    {
+        if (limit <= 0) limit = 5;
+
+        var supporters = await _db.Supporters
+            .Where(s => s.Status == "Active")
+            .ToListAsync();
+
+        if (supporters.Count == 0)
+        {
+            return Ok(Array.Empty<object>());
+        }
+
+        var ids = supporters.Select(s => s.SupporterId).ToList();
+
+        var donationsBySupporter = (await _db.Donations
+                .Where(d => ids.Contains(d.SupporterId))
+                .ToListAsync())
+            .GroupBy(d => d.SupporterId)
+            .ToDictionary(g => g.Key, g => (IReadOnlyList<Donation>)g.ToList());
+
+        var today = DateTime.UtcNow.Date;
+
+        var scoringTasks = supporters.Select(async s =>
+        {
+            var donations = donationsBySupporter.GetValueOrDefault(s.SupporterId)
+                ?? Array.Empty<Donation>();
+
+            var baseFeatures = BuildDonorBaseFeatures(s, donations);
+
+            // Upgrade model adds days_since_last_donation on top of the base dict.
+            var lastDonationDate = donations.Count > 0
+                ? donations.Max(d => d.DonationDate.ToDateTime(TimeOnly.MinValue))
+                : (DateTime?)null;
+
+            double daysSinceLastDonation = lastDonationDate.HasValue
+                ? (today - lastDonationDate.Value.Date).TotalDays
+                : -1;
+
+            var features = new Dictionary<string, object?>(baseFeatures)
+            {
+                ["days_since_last_donation"] = daysSinceLastDonation,
+            };
+
+            var (ok, body) = await ProxyToMlRaw("predict/donor-upgrade", new
+            {
+                supporter_id = s.SupporterId,
+                features,
+            });
+            return (supporter: s, ok, body);
+        });
+
+        var results = await Task.WhenAll(scoringTasks);
+
+        var ranked = results
+            .Where(x => x.ok)
+            .Select(x =>
+            {
+                var prediction = JsonSerializer.Deserialize<JsonElement>(x.body);
+                var score = prediction.TryGetProperty("upgrade_score", out var s) && s.ValueKind == JsonValueKind.Number
+                    ? s.GetDouble()
+                    : 0.0;
+                return new
+                {
+                    supporterId   = x.supporter.SupporterId,
+                    displayName   = x.supporter.DisplayName,
+                    supporterType = x.supporter.SupporterType,
+                    country       = x.supporter.Country,
+                    region        = x.supporter.Region,
+                    status        = x.supporter.Status,
+                    upgradeScore  = score,
+                    prediction,
+                };
+            })
+            .OrderByDescending(x => x.upgradeScore)
+            .Take(limit)
+            .ToList();
+
+        return Ok(ranked);
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private async Task<IActionResult> ProxyToMl(string path, object payload)
