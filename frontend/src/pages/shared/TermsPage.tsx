@@ -1,3 +1,5 @@
+import { ScrollText } from 'lucide-react';
+
 export default function TermsPage() {
   const sections = [
     { title: '1. Acceptance of Terms', body: 'By accessing or using the The Hearth Project website and services, you agree to these Terms of Service. If you do not agree, please discontinue use.' },
@@ -15,17 +17,40 @@ export default function TermsPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
-      <h1 className="text-3xl font-bold">Terms of Service</h1>
-      <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Effective date: April 7, 2026</p>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <div className="mx-auto max-w-3xl px-6 py-16 sm:py-24">
+        {/* Page header */}
+        <div className="mb-12">
+          <div className="mb-4 flex items-center gap-2 text-orange-500">
+            <ScrollText className="h-5 w-5" />
+            <span className="text-xs font-semibold uppercase tracking-widest">
+              Legal
+            </span>
+          </div>
+          <h1 className="text-3xl font-black text-gray-900 dark:text-white">
+            Terms of Service
+          </h1>
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            Effective date: April 7, 2026
+          </p>
+        </div>
 
-      <div className="mt-8 space-y-6">
-        {sections.map(({ title, body }) => (
-          <section key={title}>
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">{title}</h2>
-            <p className="mt-1 text-sm leading-relaxed text-gray-600 dark:text-gray-400">{body}</p>
-          </section>
-        ))}
+        {/* Sections */}
+        <div className="space-y-6">
+          {sections.map(({ title, body }) => (
+            <section
+              key={title}
+              className="rounded-2xl border border-gray-100 bg-white p-6 dark:border-gray-800 dark:bg-gray-900"
+            >
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                {title}
+              </h2>
+              <p className="mt-3 leading-relaxed text-gray-600 dark:text-gray-400">
+                {body}
+              </p>
+            </section>
+          ))}
+        </div>
       </div>
     </div>
   );

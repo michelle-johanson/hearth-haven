@@ -137,22 +137,22 @@ export default function ProfilePage() {
     }
   }
 
-  if (loading) return <p className="py-20 text-center text-gray-500">Loading your profile...</p>;
+  if (loading) return <p className="py-20 text-center text-gray-500 dark:text-gray-400">Loading your profile...</p>;
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
-      <div className="mb-8">
-        <Link to="/" className="mb-3 inline-flex items-center gap-2 text-sm font-medium text-orange-600 no-underline hover:text-orange-700">
+    <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
+      <div className="mb-10">
+        <Link to="/" className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-orange-500 no-underline hover:text-orange-600 transition-colors">
           <ArrowLeft className="h-4 w-4" />
           Back to home
         </Link>
-        <div className="flex items-center gap-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-50 text-orange-500 dark:bg-orange-500/10">
-            <UserRound className="h-7 w-7" />
+        <div className="flex items-center gap-5">
+          <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-orange-50 text-orange-500 dark:bg-orange-500/10">
+            <UserRound className="h-8 w-8" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">My Profile</h1>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <h1 className="text-3xl font-black text-gray-900 dark:text-white">My Profile</h1>
+            <p className="mt-1 text-gray-500 dark:text-gray-400 leading-relaxed">
               Keep your account information complete and up to date.
             </p>
           </div>
@@ -160,35 +160,35 @@ export default function ProfilePage() {
       </div>
 
       {portal && (
-        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          <div className="card">
+        <div className="mb-8 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-6">
             <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-orange-50 text-orange-500 dark:bg-orange-500/10">
               <HeartHandshake className="h-5 w-5" />
             </div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">{portal.displayName}</div>
+            <div className="text-2xl font-black text-gray-900 dark:text-white">{portal.displayName}</div>
             <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">{portal.email ?? 'No email on file'}</div>
           </div>
-          <div className="card">
+          <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-6">
             <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-orange-50 text-orange-500 dark:bg-orange-500/10">
               <DollarSign className="h-5 w-5" />
             </div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">{formatMoney(portal.totalDonationValue)}</div>
+            <div className="text-2xl font-black text-gray-900 dark:text-white">{formatMoney(portal.totalDonationValue)}</div>
             <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">Total donated</div>
           </div>
-          <div className="card">
+          <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-6">
             <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-orange-50 text-orange-500 dark:bg-orange-500/10">
               <Wallet className="h-5 w-5" />
             </div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">{portal.totalDonations}</div>
+            <div className="text-2xl font-black text-gray-900 dark:text-white">{portal.totalDonations}</div>
             <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">Donation records</div>
           </div>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="card">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white">Account Info</h2>
-          <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-6">
+          <h2 className="text-xl font-black text-gray-900 dark:text-white">Account Info</h2>
+          <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
             <label className="block">
               <span className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Name</span>
               <input className="input-field" value={valueOrEmpty(profile.displayName)} onChange={(e) => setField('displayName', e.target.value)} />
@@ -212,10 +212,10 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div className="card">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white">Appearance</h2>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Choose your preferred color theme.</p>
-          <div className="mt-4 inline-flex items-center rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-6">
+          <h2 className="text-xl font-black text-gray-900 dark:text-white">Appearance</h2>
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">Choose your preferred color theme.</p>
+          <div className="mt-5 inline-flex items-center rounded-xl border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800 p-1">
             {themeOptions.map(({ value, icon: Icon, label }) => (
               <button
                 key={value}
@@ -224,13 +224,13 @@ export default function ProfilePage() {
                 aria-label={`Use ${label.toLowerCase()} theme`}
                 aria-pressed={preference === value}
                 title={label}
-                className={`inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition ${
+                className={`inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
                   preference === value
                     ? 'bg-orange-500 text-white shadow-sm'
                     : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100'
                 }`}
               >
-                <Icon className="h-3.5 w-3.5" />
+                <Icon className="h-4 w-4" />
                 {label}
               </button>
             ))}
@@ -241,7 +241,7 @@ export default function ProfilePage() {
         {success && <p className="rounded-xl bg-green-50 px-4 py-3 text-sm text-green-700 dark:bg-green-500/10 dark:text-green-300">{success}</p>}
 
         <div className="flex justify-end">
-          <button type="submit" className="btn-primary" disabled={saving}>
+          <button type="submit" className="rounded-xl bg-orange-500 px-6 py-3 font-semibold text-white hover:bg-orange-600 transition-colors inline-flex items-center gap-2" disabled={saving}>
             <Save className="h-4 w-4" />
             {saving ? 'Saving...' : 'Save Profile'}
           </button>
@@ -249,10 +249,10 @@ export default function ProfilePage() {
       </form>
 
       {portal && (
-        <div className="mt-6 overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-md dark:border-gray-700 dark:bg-gray-900">
-          <div className="border-b border-gray-100 px-6 py-5 dark:border-gray-800">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">My Donation History</h2>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        <div className="mt-8 overflow-x-auto rounded-2xl border border-gray-100 bg-white dark:border-gray-800 dark:bg-gray-900">
+          <div className="border-b border-gray-100 px-6 py-6 dark:border-gray-800">
+            <h2 className="text-xl font-black text-gray-900 dark:text-white">My Donation History</h2>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
               Donation records linked to your supporter profile.
             </p>
           </div>

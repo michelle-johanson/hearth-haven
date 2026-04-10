@@ -41,7 +41,7 @@ function Header({ isAuthenticated, currentUser }: HeaderProps) {
         <div className="mx-auto flex h-[57px] w-full max-w-7xl items-center justify-between gap-3 px-3 sm:px-6">
           <div className="flex min-w-0 items-center gap-2 lg:gap-4">
             <Link to="/" className="flex min-w-0 items-center gap-2 text-gray-900 no-underline hover:text-gray-900 dark:text-white dark:hover:text-white">
-              <img src={theme === 'dark' ? '/heart-dark.svg' : '/Logo.svg'} alt="The Hearth Project" className="h-8 w-8" />
+              <img src={theme === 'dark' ? '/hearth-dark.png' : '/Logo.svg'} alt="The Hearth Project" className="h-8 w-auto shrink-0" />
               <span className="truncate text-base font-bold tracking-tight sm:text-lg">The Hearth Project</span>
             </Link>
 
