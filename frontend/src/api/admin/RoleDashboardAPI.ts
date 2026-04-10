@@ -11,7 +11,7 @@ export interface DashboardTopStats {
 }
 
 export const fetchTopStats = async (): Promise<DashboardTopStats> => {
-  const res = await apiFetch(`${API_BASE_URL}/AdminDashboard/TopStats`);
+  const res = await apiFetch(`${API_BASE_URL}/Dashboard/TopStats`);
   if (!res.ok) throw new Error(`Failed to fetch top stats: ${res.status}`);
   return res.json();
 };
@@ -62,7 +62,7 @@ export interface CaseManagerData {
 }
 
 export const fetchCaseManager = async (): Promise<CaseManagerData> => {
-  const res = await apiFetch(`${API_BASE_URL}/AdminDashboard/CaseManager`);
+  const res = await apiFetch(`${API_BASE_URL}/Dashboard/CaseManager`);
   if (!res.ok) throw new Error(`Failed to fetch case manager data: ${res.status}`);
   return res.json();
 };
@@ -79,13 +79,20 @@ export interface MonthlyHealthPoint {
   avgScore: number;
 }
 
+export interface SafetyRiskComparisonItem {
+  group: string;       // e.g. 'Concerns Flagged' | 'No Concerns Flagged'
+  avgRiskLevel: number; // Low=1, Medium=2, High=3, Critical=4
+  count: number;
+}
+
 export interface CaseAnalyticsData {
   monthlyEducationProgress: MonthlyEduPoint[];
   monthlyHealthScores: MonthlyHealthPoint[];
+  safetyRiskComparison?: SafetyRiskComparisonItem[];
 }
 
 export const fetchCaseAnalytics = async (): Promise<CaseAnalyticsData> => {
-  const res = await apiFetch(`${API_BASE_URL}/AdminDashboard/CaseAnalytics`);
+  const res = await apiFetch(`${API_BASE_URL}/Dashboard/CaseAnalytics`);
   if (!res.ok) throw new Error(`Failed to fetch case analytics: ${res.status}`);
   return res.json();
 };
@@ -137,7 +144,7 @@ export interface DonorManagerData {
 }
 
 export const fetchDonorManager = async (): Promise<DonorManagerData> => {
-  const res = await apiFetch(`${API_BASE_URL}/AdminDashboard/DonorManager`);
+  const res = await apiFetch(`${API_BASE_URL}/Dashboard/DonorManager`);
   if (!res.ok) throw new Error(`Failed to fetch donor manager data: ${res.status}`);
   return res.json();
 };
@@ -173,7 +180,7 @@ export interface DonorAllocationsData {
 }
 
 export const fetchDonorAllocations = async (): Promise<DonorAllocationsData> => {
-  const res = await apiFetch(`${API_BASE_URL}/AdminDashboard/DonorAllocations`);
+  const res = await apiFetch(`${API_BASE_URL}/Dashboard/DonorAllocations`);
   if (!res.ok) throw new Error(`Failed to fetch allocations: ${res.status}`);
   return res.json();
 };
@@ -187,7 +194,7 @@ export interface CreateAllocationPayload {
 }
 
 export const createAllocation = async (payload: CreateAllocationPayload): Promise<void> => {
-  const res = await apiFetch(`${API_BASE_URL}/AdminDashboard/DonorAllocations`, {
+  const res = await apiFetch(`${API_BASE_URL}/Dashboard/DonorAllocations`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -244,7 +251,7 @@ export interface SocialMediaManagerData {
 }
 
 export const fetchSocialMediaManager = async (): Promise<SocialMediaManagerData> => {
-  const res = await apiFetch(`${API_BASE_URL}/AdminDashboard/SocialMediaManager`);
+  const res = await apiFetch(`${API_BASE_URL}/Dashboard/SocialMediaManager`);
   if (!res.ok) throw new Error(`Failed to fetch social media data: ${res.status}`);
   return res.json();
 };

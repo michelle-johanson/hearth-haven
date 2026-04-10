@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuthSession } from '../../authSession';
+import { AppRoles, getCurrentRole } from '../../authz';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -16,8 +18,8 @@ import { Bar, Line } from 'react-chartjs-2';
 import {
   Users, Banknote, ShieldAlert, AlertTriangle,
   CalendarClock, MessageCircleWarning, ArrowRight,
-  TrendingUp, CheckCheck, Brain, Heart, BookOpen,
-  Megaphone, Mail, ExternalLink, Plus, ChevronDown,
+  TrendingUp, TrendingDown, CheckCheck, Brain, Heart, BookOpen,
+  Megaphone, Mail, ExternalLink, Plus, ChevronDown, FlaskConical,
 } from 'lucide-react';
 import {
   fetchTopStats, fetchCaseManager, fetchCaseAnalytics,
@@ -36,6 +38,27 @@ import {
   type TopLapseRiskDonor, type TopUpgradePotentialDonor,
 } from '../../api/donationManager/MLDonorAPI';
 import { fetchMonthlyDonationForecast, type MonthlyDonationForecast } from '../../api/socialsManager/MLSocialAPI';
+import {
+  DetailModal,
+  TriageHighRiskContent, TriageIncidentsContent,
+  TriageFlaggedContent, TriageConferencesContent,
+  EscalatedResidentContent, ReintegCandidateContent,
+  SafehouseDetailContent, IncidentDetailContent,
+  RiskDriverDetailContent, InterventionFactorContent,
+} from '../../components/admin/dashboard/DetailModal';
+import type { EscalatedResident, SafehouseOccupancyItem, CaseIncident } from '../../api/admin/RoleDashboardAPI';
+
+type ActiveModal =
+  | { type: 'triage-highrisk' }
+  | { type: 'triage-incidents' }
+  | { type: 'triage-flagged' }
+  | { type: 'triage-conferences' }
+  | { type: 'resident'; resident: EscalatedResident }
+  | { type: 'reintegration'; candidate: TopReintegrationCandidate }
+  | { type: 'safehouse'; safehouse: SafehouseOccupancyItem }
+  | { type: 'incident'; incident: CaseIncident }
+  | { type: 'risk-driver'; label: string; coefficient: number; significant: string }
+  | { type: 'intervention-factor'; label: string; coefficient: number; significant: string; direction: 'positive' | 'negative' };
 
 ChartJS.register(
   CategoryScale, LinearScale, BarElement,
@@ -79,6 +102,29 @@ function fmtUSD(n: number) {
 
 function fmtPct(n: number) {
   return n.toFixed(1) + '%';
+}
+
+// ── Shared sub-components ─────────────────────────────────────────────────────
+
+function DriverBar({ label, coefficient, max, positive }: {
+  label: string; coefficient: number; max: number; positive: boolean;
+}) {
+  const pct = max > 0 ? Math.abs(coefficient) / max * 100 : 0;
+  const color = positive
+    ? 'bg-orange-500 dark:bg-orange-400'
+    : 'bg-blue-500 dark:bg-blue-400';
+  const sign = coefficient >= 0 ? '+' : '';
+  return (
+    <div>
+      <div className="mb-1 flex items-center justify-between">
+        <span className="text-xs text-gray-700 dark:text-gray-300 truncate max-w-[70%]">{label}</span>
+        <span className="text-xs font-mono text-gray-500 dark:text-gray-400">{sign}{coefficient.toFixed(3)}</span>
+      </div>
+      <div className="h-2 w-full rounded-full bg-gray-100 dark:bg-gray-700">
+        <div className={`h-2 rounded-full ${color}`} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
 }
 
 // ── Shared chart options ───────────────────────────────────────────────────────
@@ -148,6 +194,7 @@ const healthLineOpts: ChartOptions<'line'> = {
   },
 };
 
+
 // ── Inline skeleton ────────────────────────────────────────────────────────────
 
 function Skeleton({ className }: { className?: string }) {
@@ -168,9 +215,19 @@ function CardSkeleton() {
 
 type Tab = 'case' | 'donor' | 'social';
 
+const roleTabMap: Partial<Record<string, Tab>> = {
+  [AppRoles.CaseManager]:     'case',
+  [AppRoles.DonationsManager]: 'donor',
+  [AppRoles.OutreachManager]: 'social',
+};
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<Tab>('case');
+  const { currentUser } = useAuthSession();
+  const role = getCurrentRole(currentUser);
+  const defaultTab: Tab = (role && roleTabMap[role]) ?? 'case';
+  const [activeTab, setActiveTab] = useState<Tab>(defaultTab);
+  const [activeModal, setActiveModal] = useState<ActiveModal | null>(null);
 
   // Top stats (always loaded)
   const [topStats, setTopStats]       = useState<DashboardTopStats | null>(null);
@@ -180,8 +237,9 @@ export default function AdminDashboard() {
   const [caseData, setCaseData]           = useState<CaseManagerData | null>(null);
   const [caseAnalytics, setCaseAnalytics] = useState<CaseAnalyticsData | null>(null);
   const [reintegCands, setReintegCands]   = useState<TopReintegrationCandidate[] | null>(null);
-  const [riskDrivers, setRiskDrivers]     = useState<RiskDriver[] | null>(null);
-  const [caseLoading, setCaseLoading]     = useState(false);
+  const [riskDrivers, setRiskDrivers]           = useState<RiskDriver[] | null>(null);
+  const [interventionCoefs, setInterventionCoefs] = useState<RiskDriver[] | null>(null);
+  const [caseLoading, setCaseLoading]           = useState(false);
   const [caseError, setCaseError]         = useState<string | null>(null);
 
   // Donor tab
@@ -217,17 +275,25 @@ export default function AdminDashboard() {
 
     if (activeTab === 'case') {
       setCaseLoading(true);
+      const parseCoefCsv = (text: string): RiskDriver[] =>
+        text.trim().split('\n').slice(1).map(line => {
+          const [feature, coefficient, , , , , significant] = line.split(',');
+          return { feature, coefficient: parseFloat(coefficient), significant: significant?.trim() ?? '' };
+        });
+
       Promise.all([
         fetchCaseManager(),
         fetchCaseAnalytics(),
         fetchTopReintegrationCandidates(8),
         fetchRiskDrivers(),
+        fetch('/causal/intervention_effectiveness_coefficients.csv').then(r => r.text()).then(parseCoefCsv).catch(() => null),
       ])
-        .then(([cm, ca, rc, rd]) => {
+        .then(([cm, ca, rc, rd, ic]) => {
           setCaseData(cm);
           setCaseAnalytics(ca);
           setReintegCands(rc);
           setRiskDrivers(rd);
+          if (ic) setInterventionCoefs(ic);
         })
         .catch((err) => setCaseError(err.message))
         .finally(() => setCaseLoading(false));
@@ -276,36 +342,41 @@ export default function AdminDashboard() {
   // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Role-specific operational overview
-        </p>
+    <div>
+      {/* ── Top Stats Banner ─────────────────────────────────────────────────── */}
+      <div className="bg-orange-50/60 dark:bg-orange-500/5 border-b border-orange-100 dark:border-orange-500/20 px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mb-5">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Role-specific operational overview
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {statsLoading ? (
+            [0,1,2,3].map(i => <CardSkeleton key={i} />)
+          ) : topStats ? (
+            <>
+              <StatCard icon={Users}    label="Active Residents"  value={topStats.activeResidents}             color="bg-orange-50 dark:bg-orange-500/10 text-orange-500" />
+              <StatCard icon={Heart}    label="Active Donors"     value={topStats.activeDonors}                color="bg-pink-50 dark:bg-pink-500/10 text-pink-500" />
+              <StatCard icon={Banknote} label="Donations (MTD)"  value={fmtUSD(topStats.monthlyDonations)}    color="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-500" />
+              <StatCard icon={TrendingUp} label="Unallocated Funds" value={fmtUSD(topStats.unallocatedFunds)} color={topStats.unallocatedFunds > 0 ? 'bg-yellow-50 dark:bg-yellow-500/10 text-yellow-600' : 'bg-green-50 dark:bg-green-500/10 text-green-500'} />
+            </>
+          ) : null}
+        </div>
       </div>
 
-      {/* ── Top Stats Bar ────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-6">
-        {statsLoading ? (
-          [0,1,2,3].map(i => <CardSkeleton key={i} />)
-        ) : topStats ? (
-          <>
-            <StatCard icon={Users}    label="Active Residents"  value={topStats.activeResidents}             color="bg-orange-50 dark:bg-orange-500/10 text-orange-500" />
-            <StatCard icon={Heart}    label="Active Donors"     value={topStats.activeDonors}                color="bg-pink-50 dark:bg-pink-500/10 text-pink-500" />
-            <StatCard icon={Banknote} label="Donations (MTD)"  value={fmtUSD(topStats.monthlyDonations)}    color="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-500" />
-            <StatCard icon={TrendingUp} label="Unallocated Funds" value={fmtUSD(topStats.unallocatedFunds)} color={topStats.unallocatedFunds > 0 ? 'bg-yellow-50 dark:bg-yellow-500/10 text-yellow-600' : 'bg-green-50 dark:bg-green-500/10 text-green-500'} />
-          </>
-        ) : null}
-      </div>
-
+      {/* ── Rest of dashboard ─────────────────────────────────────────────────── */}
+      <div className="p-4 sm:p-6 lg:p-8">
       {/* ── Tab Bar ──────────────────────────────────────────────────────────── */}
+      {/* Only show tab bar if the user has access to more than one tab */}
       <div className="mb-6 flex gap-1 rounded-xl border border-gray-200 bg-gray-50 p-1 dark:border-gray-700 dark:bg-gray-800/50 w-fit">
         {([
           { id: 'case',   label: 'Case Management',  icon: ShieldAlert },
           { id: 'donor',  label: 'Donor Management', icon: Banknote },
           { id: 'social', label: 'Social Media',     icon: Megaphone },
-        ] as { id: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[]).map(({ id, label, icon: Icon }) => (
+        ] as { id: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[])
+        .filter(({ id }) => role === AppRoles.Admin || !role || roleTabMap[role] === id)
+        .map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             onClick={() => setActiveTab(id)}
@@ -330,7 +401,9 @@ export default function AdminDashboard() {
           caseAnalytics={caseAnalytics}
           reintegCands={reintegCands}
           riskDrivers={riskDrivers}
+          interventionCoefs={interventionCoefs}
           navigate={navigate}
+          onOpenModal={setActiveModal}
         />
       )}
 
@@ -362,6 +435,78 @@ export default function AdminDashboard() {
           navigate={navigate}
         />
       )}
+      </div>
+
+      {/* ── Detail Modal ──────────────────────────────────────────────────────── */}
+      {activeModal && caseData && (() => {
+        const close = () => setActiveModal(null);
+        const nav = (path: string) => { close(); navigate(path); };
+
+        const modalProps = (() => {
+          switch (activeModal.type) {
+            case 'triage-highrisk':
+              return {
+                title: 'High / Critical Risk Residents',
+                subtitle: `${caseData.triage.highCriticalRisk} resident${caseData.triage.highCriticalRisk !== 1 ? 's' : ''} flagged`,
+                content: <TriageHighRiskContent caseData={caseData} onNavigate={nav} />,
+              };
+            case 'triage-incidents':
+              return {
+                title: 'Unresolved Incidents',
+                subtitle: `${caseData.triage.unresolvedIncidents} open incident${caseData.triage.unresolvedIncidents !== 1 ? 's' : ''}`,
+                content: <TriageIncidentsContent caseData={caseData} onNavigate={nav} />,
+              };
+            case 'triage-flagged':
+              return {
+                title: 'Flagged Sessions',
+                content: <TriageFlaggedContent count={caseData.triage.flaggedSessions} onNavigate={nav} />,
+              };
+            case 'triage-conferences':
+              return {
+                title: 'Upcoming Conferences',
+                content: <TriageConferencesContent count={caseData.triage.upcomingConferences} onNavigate={nav} />,
+              };
+            case 'resident':
+              return {
+                title: activeModal.resident.caseControlNo,
+                subtitle: 'Escalated risk — review intervention plan',
+                content: <EscalatedResidentContent resident={activeModal.resident} onNavigate={nav} />,
+              };
+            case 'reintegration':
+              return {
+                title: activeModal.candidate.caseControlNo,
+                subtitle: 'Reintegration candidate',
+                content: <ReintegCandidateContent candidate={activeModal.candidate} onNavigate={nav} />,
+              };
+            case 'safehouse':
+              return {
+                title: activeModal.safehouse.name,
+                subtitle: activeModal.safehouse.region,
+                content: <SafehouseDetailContent safehouse={activeModal.safehouse} onNavigate={nav} />,
+              };
+            case 'incident':
+              return {
+                title: activeModal.incident.incidentType,
+                subtitle: activeModal.incident.incidentDate,
+                content: <IncidentDetailContent incident={activeModal.incident} onNavigate={nav} />,
+              };
+            case 'risk-driver':
+              return {
+                title: activeModal.label,
+                subtitle: 'Risk level driver',
+                content: <RiskDriverDetailContent label={activeModal.label} coefficient={activeModal.coefficient} significant={activeModal.significant} />,
+              };
+            case 'intervention-factor':
+              return {
+                title: activeModal.label,
+                subtitle: `Intervention factor · ${activeModal.direction}`,
+                content: <InterventionFactorContent label={activeModal.label} coefficient={activeModal.coefficient} significant={activeModal.significant} direction={activeModal.direction} />,
+              };
+          }
+        })();
+
+        return <DetailModal {...modalProps} onClose={close} />;
+      })()}
     </div>
   );
 }
@@ -436,35 +581,12 @@ function formatFeatureLabel(feature: string): string {
     .replace(/^\w/, (c) => c.toUpperCase());
 }
 
-// ── Driver bar ────────────────────────────────────────────────────────────────
-
-function DriverBar({ label, coefficient, max, positive }: { label: string; coefficient: number; max: number; positive: boolean }) {
-  const pct = max > 0 ? Math.abs(coefficient) / max * 100 : 0;
-  const displayLabel = formatFeatureLabel(label);
-  return (
-    <div className="flex items-center gap-3">
-      <div className="w-40 shrink-0 truncate text-xs text-gray-600 dark:text-gray-400" title={displayLabel}>
-        {displayLabel}
-      </div>
-      <div className="flex-1 h-2 rounded-full bg-gray-100 dark:bg-gray-700">
-        <div
-          className={`h-2 rounded-full transition-all ${positive ? 'bg-orange-500' : 'bg-blue-500'}`}
-          style={{ width: `${Math.min(pct, 100)}%` }}
-        />
-      </div>
-      <div className={`w-12 text-right text-xs font-medium ${positive ? 'text-orange-600 dark:text-orange-400' : 'text-blue-600 dark:text-blue-400'}`}>
-        {positive ? '+' : ''}{coefficient.toFixed(2)}
-      </div>
-    </div>
-  );
-}
-
 // ══════════════════════════════════════════════════════════════════════════════
 // CASE MANAGEMENT TAB
 // ══════════════════════════════════════════════════════════════════════════════
 
 function CaseTab({
-  loading, error, caseData, caseAnalytics, reintegCands, riskDrivers, navigate,
+  loading, error, caseData, caseAnalytics, reintegCands, riskDrivers, interventionCoefs, navigate, onOpenModal,
 }: {
   loading: boolean;
   error: string | null;
@@ -472,33 +594,36 @@ function CaseTab({
   caseAnalytics: CaseAnalyticsData | null;
   reintegCands: TopReintegrationCandidate[] | null;
   riskDrivers: RiskDriver[] | null;
+  interventionCoefs: RiskDriver[] | null;
   navigate: ReturnType<typeof useNavigate>;
+  onOpenModal: (modal: ActiveModal) => void;
 }) {
   if (loading) return <CaseTabSkeleton />;
   if (error) return <p className="py-12 text-center text-red-500">Failed to load: {error}</p>;
   if (!caseData) return null;
+
 
   const t = caseData.triage;
   const triageCards = [
     {
       icon: ShieldAlert, label: 'High / Critical Risk', value: t.highCriticalRisk,
       color: t.highCriticalRisk > 0 ? 'bg-red-50 dark:bg-red-500/10 text-red-500' : 'bg-green-50 dark:bg-green-500/10 text-green-500',
-      onClick: () => navigate('/cases', { state: { filter: 'highRisk' } }),
+      onClick: () => onOpenModal({ type: 'triage-highrisk' }),
     },
     {
       icon: AlertTriangle, label: 'Unresolved Incidents', value: t.unresolvedIncidents,
       color: t.unresolvedIncidents > 0 ? 'bg-yellow-50 dark:bg-yellow-500/10 text-yellow-600' : 'bg-green-50 dark:bg-green-500/10 text-green-500',
-      onClick: () => navigate('/cases', { state: { filter: 'incidents' } }),
+      onClick: () => onOpenModal({ type: 'triage-incidents' }),
     },
     {
       icon: MessageCircleWarning, label: 'Flagged Sessions', value: t.flaggedSessions,
       color: t.flaggedSessions > 0 ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-500' : 'bg-green-50 dark:bg-green-500/10 text-green-500',
-      onClick: () => navigate('/cases', { state: { filter: 'flagged' } }),
+      onClick: () => onOpenModal({ type: 'triage-flagged' }),
     },
     {
       icon: CalendarClock, label: 'Upcoming Conferences', value: t.upcomingConferences,
       color: 'bg-purple-50 dark:bg-purple-500/10 text-purple-500',
-      onClick: () => navigate('/cases', { state: { filter: 'conferences' } }),
+      onClick: () => onOpenModal({ type: 'triage-conferences' }),
     },
   ];
 
@@ -531,14 +656,6 @@ function CaseTab({
     }],
   };
 
-  const maxDriverCoeff = riskDrivers
-    ? Math.max(...riskDrivers.map(d => Math.abs(d.coefficient)))
-    : 1;
-
-  const topPositiveDriver = riskDrivers
-    ?.filter(d => d.coefficient > 0)
-    .sort((a, b) => b.coefficient - a.coefficient)[0] ?? null;
-
   return (
     <div className="space-y-6">
       {/* Triage row */}
@@ -567,7 +684,7 @@ function CaseTab({
               <div
                 key={r.residentId}
                 className="flex items-center justify-between rounded-lg border border-gray-100 dark:border-gray-700 px-3 py-2 transition hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
-                onClick={() => navigate(`/cases/${r.residentId}`, { state: { from: '/dashboard' } })}
+                onClick={() => onOpenModal({ type: 'resident', resident: r })}
               >
                 <div className="min-w-0 flex-1">
                   <span className="text-sm font-medium text-gray-900 dark:text-white">{r.caseControlNo}</span>
@@ -584,68 +701,159 @@ function CaseTab({
         </div>
       )}
 
-      {/* Analytics story: what drives outcomes + trend charts */}
+      {/* ── Causal Insights ── */}
+      <div>
+        <div className="mb-1 flex items-center gap-2">
+          <FlaskConical className="h-4 w-4 text-orange-500 shrink-0" />
+          <h3 className="text-base font-bold text-gray-900 dark:text-white">Causal Insights</h3>
+        </div>
+        <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
+          OLS regression results identifying statistically significant drivers. Coefficients show estimated effect size;{' '}
+          <span className="font-medium">**</span> p&lt;0.01,{' '}
+          <span className="font-medium">*</span> p&lt;0.05.
+        </p>
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          {/* Risk Drivers */}
+          <div className="card">
+            <div className="mb-3 flex items-center gap-2">
+              <FlaskConical className="h-4 w-4 text-orange-500 shrink-0" />
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                What Drives Resident Risk Level?
+              </h3>
+            </div>
+            <p className="mb-3 text-xs text-gray-400 dark:text-gray-500">
+              Significant predictors of current risk score (OLS on all residents)
+            </p>
+            <div className="space-y-2">
+              {riskDrivers && riskDrivers.length > 0 ? (
+                [...riskDrivers]
+                  .sort((a, b) => b.coefficient - a.coefficient)
+                  .map(row => {
+                    const isPositive = row.coefficient > 0;
+                    return (
+                      <div
+                        key={row.feature}
+                        className="flex cursor-pointer items-center justify-between gap-3 rounded-lg bg-gray-50 px-3 py-2 transition hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700"
+                        onClick={() => onOpenModal({ type: 'risk-driver', label: formatFeatureLabel(row.feature), coefficient: row.coefficient, significant: row.significant })}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          {isPositive
+                            ? <TrendingUp className="h-3.5 w-3.5 shrink-0 text-red-400" />
+                            : <TrendingDown className="h-3.5 w-3.5 shrink-0 text-green-400" />}
+                          <span className="truncate text-sm text-gray-700 dark:text-gray-300">
+                            {formatFeatureLabel(row.feature)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className={`text-sm font-mono font-medium ${isPositive ? 'text-red-500' : 'text-green-500'}`}>
+                            {isPositive ? '+' : ''}{row.coefficient.toFixed(3)}
+                          </span>
+                          <span className="text-xs text-gray-400">{row.significant}</span>
+                        </div>
+                      </div>
+                    );
+                  })
+              ) : (
+                <p className="text-sm text-gray-500 dark:text-gray-400">No driver data available.</p>
+              )}
+            </div>
+          </div>
+
+          {/* Intervention Factors */}
+          {interventionCoefs && interventionCoefs.length > 0 && (() => {
+            const posFactors = [...interventionCoefs]
+              .filter(d => d.coefficient > 0)
+              .sort((a, b) => b.coefficient - a.coefficient)
+              .slice(0, 5);
+            const negFactors = [...interventionCoefs]
+              .filter(d => d.coefficient < 0)
+              .sort((a, b) => a.coefficient - b.coefficient)
+              .slice(0, 5);
+            return (
+              <div className="card">
+                <div className="mb-3 flex items-center gap-2">
+                  <FlaskConical className="h-4 w-4 text-violet-500 shrink-0" />
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    What Drives Intervention Success?
+                  </h3>
+                </div>
+                <p className="mb-3 text-xs text-gray-400 dark:text-gray-500">
+                  Top coefficient drivers of intervention effectiveness score
+                </p>
+                <div className="space-y-1">
+                  <p className="mb-1 text-xs font-medium text-green-600 dark:text-green-400">Positive factors</p>
+                  {posFactors.map(d => (
+                    <div
+                      key={d.feature}
+                      className="flex cursor-pointer items-center justify-between gap-3 rounded-lg bg-gray-50 px-3 py-2 transition hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700"
+                      onClick={() => onOpenModal({ type: 'intervention-factor', label: formatFeatureLabel(d.feature), coefficient: d.coefficient, significant: d.significant, direction: 'positive' })}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <TrendingUp className="h-3.5 w-3.5 shrink-0 text-green-400" />
+                        <span className="truncate text-sm text-gray-700 dark:text-gray-300">
+                          {formatFeatureLabel(d.feature)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-sm font-mono font-medium text-green-500">
+                          +{d.coefficient.toFixed(1)}
+                        </span>
+                        {d.significant && d.significant !== '(ns)' && (
+                          <span className="text-xs text-gray-400">{d.significant}</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  <p className="mt-2 mb-1 text-xs font-medium text-red-500 dark:text-red-400">Negative factors</p>
+                  {negFactors.map(d => (
+                    <div
+                      key={d.feature}
+                      className="flex cursor-pointer items-center justify-between gap-3 rounded-lg bg-gray-50 px-3 py-2 transition hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700"
+                      onClick={() => onOpenModal({ type: 'intervention-factor', label: formatFeatureLabel(d.feature), coefficient: d.coefficient, significant: d.significant, direction: 'negative' })}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <TrendingDown className="h-3.5 w-3.5 shrink-0 text-red-400" />
+                        <span className="truncate text-sm text-gray-700 dark:text-gray-300">
+                          {formatFeatureLabel(d.feature)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-sm font-mono font-medium text-red-500">
+                          {d.coefficient.toFixed(1)}
+                        </span>
+                        {d.significant && d.significant !== '(ns)' && (
+                          <span className="text-xs text-gray-400">{d.significant}</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      </div>
+
+      {/* ── Analytics charts ── */}
       <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
-        {/* Risk drivers */}
         <div className="card p-5">
           <div className="mb-1 flex items-center gap-2">
-            <Brain className="h-5 w-5 text-orange-500 shrink-0" />
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">What drives resident outcomes?</h3>
+            <BookOpen className="h-4 w-4 text-orange-500" />
+            <h3 className="text-base font-bold text-gray-900 dark:text-white">Education Progress (12 months)</h3>
           </div>
-          <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
-            Causal model — factors that significantly predict higher current risk score.
-          </p>
-          {topPositiveDriver && (
-            <div className="mb-4 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2.5 dark:border-orange-500/30 dark:bg-orange-500/5">
-              <p className="text-xs text-orange-800 dark:text-orange-300">
-                <span className="font-semibold">{formatFeatureLabel(topPositiveDriver.feature)}</span>
-                {' '}is the strongest predictor of elevated risk in our model
-                {' '}({topPositiveDriver.coefficient > 0 ? '+' : ''}{topPositiveDriver.coefficient.toFixed(2)} coefficient
-                {', '}~{Math.exp(topPositiveDriver.coefficient).toFixed(2)}× odds multiplier).
-              </p>
-            </div>
-          )}
-          {riskDrivers && riskDrivers.length > 0 ? (
-            <div className="space-y-2.5">
-              {riskDrivers
-                .sort((a, b) => b.coefficient - a.coefficient)
-                .slice(0, 6)
-                .map(d => (
-                  <DriverBar
-                    key={d.feature}
-                    label={d.feature}
-                    coefficient={d.coefficient}
-                    max={maxDriverCoeff}
-                    positive={d.coefficient > 0}
-                  />
-                ))}
-            </div>
-          ) : (
-            <p className="text-sm text-gray-500 dark:text-gray-400">No driver data available.</p>
-          )}
+          <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">Average % completion of enrolled academic or vocational programs across active residents. Consistent scores above 80% reflect strong program engagement.</p>
+          <div className="h-44">
+            <Line data={eduChartData} options={baseLineOpts} />
+          </div>
         </div>
-
-        {/* Trend charts */}
-        <div className="space-y-5">
-          <div className="card p-5">
-            <div className="mb-1 flex items-center gap-2">
-              <BookOpen className="h-4 w-4 text-orange-500" />
-              <h3 className="text-base font-bold text-gray-900 dark:text-white">Education Progress (12 months)</h3>
-            </div>
-            <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">Average % completion of enrolled academic or vocational programs across active residents. Consistent scores above 80% reflect strong program engagement.</p>
-            <div className="h-44">
-              <Line data={eduChartData} options={baseLineOpts} />
-            </div>
+        <div className="card p-5">
+          <div className="mb-1 flex items-center gap-2">
+            <Heart className="h-4 w-4 text-blue-500" />
+            <h3 className="text-base font-bold text-gray-900 dark:text-white">Health Scores (12 months)</h3>
           </div>
-          <div className="card p-5">
-            <div className="mb-1 flex items-center gap-2">
-              <Heart className="h-4 w-4 text-blue-500" />
-              <h3 className="text-base font-bold text-gray-900 dark:text-white">Health Scores (12 months)</h3>
-            </div>
-            <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">Average monthly health score across active residents, rated 1–5 by our health team across nutrition, sleep, and energy. Scored out of 5.</p>
-            <div className="h-44">
-              <Line data={healthChartData} options={healthLineOpts} />
-            </div>
+          <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">Average monthly health score across active residents, rated 1–5 by our health team across nutrition, sleep, and energy. Scored out of 5.</p>
+          <div className="h-44">
+            <Line data={healthChartData} options={healthLineOpts} />
           </div>
         </div>
       </div>
@@ -666,7 +874,7 @@ function CaseTab({
               <div
                 key={r.residentId}
                 className="flex items-center justify-between rounded-lg border border-gray-100 dark:border-gray-700 px-3 py-2 transition hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
-                onClick={() => navigate(`/cases/${r.residentId}`, { state: { from: '/dashboard' } })}
+                onClick={() => onOpenModal({ type: 'reintegration', candidate: r })}
               >
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-medium text-gray-900 dark:text-white">{r.caseControlNo}</div>
@@ -707,7 +915,7 @@ function CaseTab({
                   <div
                     key={sh.safehouseId}
                     className="cursor-pointer rounded-lg p-2 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
-                    onClick={() => navigate(`/safehouse-management/safehouses/${sh.safehouseId}`, { state: { from: '/dashboard' } })}
+                    onClick={() => onOpenModal({ type: 'safehouse', safehouse: sh })}
                   >
                     <div className="flex items-center justify-between text-sm">
                       <span className="font-medium text-gray-700 dark:text-gray-300">{sh.name}</span>
@@ -741,7 +949,7 @@ function CaseTab({
                 <div
                   key={i.incidentId}
                   className="flex items-center justify-between rounded-lg border border-gray-100 dark:border-gray-700 px-3 py-2 transition hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
-                  onClick={() => navigate(`/cases/${i.residentId}`, { state: { from: '/dashboard', tab: 'safety' } })}
+                  onClick={() => onOpenModal({ type: 'incident', incident: i })}
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
@@ -901,7 +1109,7 @@ function DonorTab({
                 <div
                   key={d.supporterId}
                   className="flex items-center justify-between rounded-lg border border-gray-100 dark:border-gray-700 px-3 py-2 transition hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
-                  onClick={() => navigate(`/donors/${d.supporterId}`, { state: { from: '/dashboard' } })}
+                  onClick={() => navigate(`/donors/${d.supporterId}`, { state: { from: '/admin' } })}
                 >
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-medium text-gray-900 dark:text-white truncate">{d.displayName}</div>
@@ -1292,7 +1500,7 @@ function SocialTab({
       <div className="card p-5">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-lg font-bold text-gray-900 dark:text-white">Action Queue</h3>
-          <button className="btn-ghost text-sm" onClick={() => navigate('/outreach')}>
+          <button className="btn-ghost text-sm" onClick={() => navigate('/social-media')}>
             All Posts <ArrowRight className="h-3.5 w-3.5" />
           </button>
         </div>
@@ -1320,7 +1528,7 @@ function SocialTab({
                 </div>
                 <button
                   className="btn-ghost text-sm shrink-0 ml-3"
-                  onClick={() => navigate(`/outreach?edit=${p.postId}`)}
+                  onClick={() => navigate(`/social-media`)}
                 >
                   Enter metrics <ArrowRight className="h-3.5 w-3.5" />
                 </button>
@@ -1411,7 +1619,7 @@ function SocialTab({
               <div
                 key={p.postId}
                 className="rounded-xl border border-gray-100 dark:border-gray-700 p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition cursor-pointer"
-                onClick={() => navigate(`/outreach?post=${p.postId}`)}
+                onClick={() => navigate('/social-media')}
               >
                 <div className="mb-2 flex items-center gap-2">
                   <span className="badge bg-orange-100 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 font-semibold">

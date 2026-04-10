@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import {
-  LayoutDashboard, Users, Home, Heart, Globe, Share2, FileText, Wallet, UserCog,
+  LayoutDashboard, Users, Home, Heart, Share2, Wallet, UserCog,
   X, PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
 import { useAuthSession } from '../authSession';
@@ -11,15 +11,13 @@ type SidebarItem = NavLink & {
 };
 
 const navItems: SidebarItem[] = [
-  { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, roles: [AppRoles.Admin] },
+  { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, roles: [AppRoles.Admin, AppRoles.CaseManager, AppRoles.DonationsManager, AppRoles.OutreachManager] },
   { to: '/admin/users', label: 'User Management', icon: UserCog, roles: [AppRoles.Admin] },
   { to: '/cases', label: 'Cases', icon: Users, roles: [AppRoles.Admin, AppRoles.CaseManager] },
   { to: '/safehouse-management', label: 'Safehouses', icon: Home, roles: [AppRoles.Admin, AppRoles.CaseManager] },
   { to: '/donors', label: 'Donors', icon: Heart, roles: [AppRoles.Admin, AppRoles.DonationsManager] },
   { to: '/allocations', label: 'Allocations', icon: Wallet, roles: [AppRoles.Admin, AppRoles.DonationsManager] },
-  { to: '/outreach', label: 'Outreach', icon: Globe, roles: [AppRoles.Admin, AppRoles.OutreachManager] },
   { to: '/social-media', label: 'Social Media', icon: Share2, roles: [AppRoles.Admin, AppRoles.OutreachManager] },
-  { to: '/reports', label: 'Reports', icon: FileText, roles: [AppRoles.Admin, AppRoles.OutreachManager] },
 ];
 
 type AdminSidebarProps = {

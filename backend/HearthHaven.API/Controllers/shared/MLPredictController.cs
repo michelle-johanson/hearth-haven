@@ -324,7 +324,7 @@ public class MLPredictController : ControllerBase
 
         var results = await Task.WhenAll(scoringTasks);
 
-        // 4. Parse, sort by readiness_score desc, take top N, project to display shape.
+        // 4. Parse, filter to meaningful scores, sort desc, take top N, project to display shape.
         var ranked = results
             .Where(x => x.ok)
             .Select(x =>
@@ -345,6 +345,7 @@ public class MLPredictController : ControllerBase
                     prediction,
                 };
             })
+            .Where(x => x.readinessScore >= 20)
             .OrderByDescending(x => x.readinessScore)
             .Take(limit)
             .ToList();

@@ -43,7 +43,9 @@ const role = getCurrentRole(currentUser);
   }, []);
 
   const visibleLinks = headerLinks.filter((link) => canShowLink(link, isAuthenticated, role));
-  const primaryLinks = visibleLinks.filter((link) => ['/', '/impact', '/donate'].includes(link.to));
+  const primaryLinks = visibleLinks.filter((link) =>
+    ['/', '/impact', '/donate'].includes(link.to) && (isAuthenticated || link.to !== '/donate')
+  );
   const userName = currentUser?.displayName ?? null;
   const isStaffRole = role === AppRoles.Admin || role === AppRoles.CaseManager || role === AppRoles.DonationsManager || role === AppRoles.OutreachManager;
 
@@ -98,7 +100,9 @@ const role = getCurrentRole(currentUser);
               {!isAuthenticated ? (
                 <>
                   <Link to="/login" className="btn-ghost no-underline">Sign in</Link>
-                  <Link to="/register" className="btn-secondary px-4 py-2 text-sm no-underline">Register</Link>
+                  <Link to="/donate" className="inline-flex items-center gap-1.5 rounded-lg bg-orange-500 px-4 py-2 text-sm font-bold text-white no-underline transition hover:bg-orange-600 dark:bg-orange-500 dark:hover:bg-orange-400">
+                    <Heart className="h-4 w-4" /> Donate
+                  </Link>
                 </>
               ) : (
                 <div ref={dropdownRef} className="relative">
@@ -189,7 +193,9 @@ const role = getCurrentRole(currentUser);
               {!isAuthenticated ? (
                 <>
                   <Link to="/login" className="btn-secondary w-full no-underline">Sign in</Link>
-                  <Link to="/register" className="btn-secondary w-full no-underline">Register</Link>
+                  <Link to="/donate" className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-orange-500 px-4 py-2.5 text-base font-bold text-white no-underline transition hover:bg-orange-600 dark:bg-orange-500 dark:hover:bg-orange-400">
+                    <Heart className="h-4 w-4" /> Donate
+                  </Link>
                 </>
               ) : (
                 <>
