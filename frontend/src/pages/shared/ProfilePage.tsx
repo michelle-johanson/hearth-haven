@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, DollarSign, HeartHandshake, Repeat, Save, UserRound, Wallet } from 'lucide-react';
+import { ArrowLeft, DollarSign, HeartHandshake, Monitor, Moon, Repeat, Save, Sun, UserRound, Wallet } from 'lucide-react';
+import { useTheme } from '../../ThemeContext';
 import { fetchMyProfile, updateMyProfile, type UserProfile } from '../../api/shared/ProfileAPI';
 import { API_BASE_URL } from '../../api/core/config';
 import { apiFetch } from '../../api/core/http';
@@ -63,7 +64,14 @@ function formatMoney(value: number | null | undefined, currencyCode = 'USD') {
   }).format(amount);
 }
 
+const themeOptions = [
+  { value: 'light' as const, icon: Sun, label: 'Light' },
+  { value: 'dark' as const, icon: Moon, label: 'Dark' },
+  { value: 'system' as const, icon: Monitor, label: 'System' },
+];
+
 export default function ProfilePage() {
+  const { preference, setPreference } = useTheme();
   const [profile, setProfile] = useState<UserProfile>(blankProfile);
   const [portal, setPortal] = useState<DonorPortalResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -201,6 +209,31 @@ export default function ProfilePage() {
                 autoComplete="tel"
               />
             </label>
+          </div>
+        </div>
+
+        <div className="card">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">Appearance</h2>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Choose your preferred color theme.</p>
+          <div className="mt-4 inline-flex items-center rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
+            {themeOptions.map(({ value, icon: Icon, label }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setPreference(value)}
+                aria-label={`Use ${label.toLowerCase()} theme`}
+                aria-pressed={preference === value}
+                title={label}
+                className={`inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition ${
+                  preference === value
+                    ? 'bg-orange-500 text-white shadow-sm'
+                    : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100'
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {label}
+              </button>
+            ))}
           </div>
         </div>
 
