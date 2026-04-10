@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../../api/core/config';
 import { apiFetch } from '../../api/core/http';
@@ -7,6 +7,33 @@ import { useAuthSession } from '../../authSession';
 
 const AMOUNTS: number[] = [10, 25, 50, 100, 250, 500];
 type AuthMode = 'anonymous' | 'loggedin';
+
+function useOnScreen(threshold = 0.15) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setVisible(true); obs.disconnect(); } },
+      { threshold }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [threshold]);
+  return { ref, visible };
+}
+
+function FadeIn({ children, className = '', delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
+  const { ref, visible } = useOnScreen(0.08);
+  return (
+    <div ref={ref} className={className}
+      style={{ opacity: visible ? 1 : 0, transform: visible ? 'translateY(0)' : 'translateY(28px)',
+        transition: `opacity 0.65s ease ${delay}ms, transform 0.65s ease ${delay}ms` }}>
+      {children}
+    </div>
+  );
+}
 
 function DonatePage() {
   const navigate = useNavigate();
@@ -117,218 +144,244 @@ function DonatePage() {
   return (
     <div>
       {/* Hero */}
-      <section className="py-16 text-center">
-        <Heart className="mx-auto mb-4 h-10 w-10 text-orange-500" />
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl">
-          Make a <span className="text-orange-500">Difference</span> Today
-        </h1>
-        <p className="mt-3 text-gray-500 dark:text-gray-400">
-          Your generosity helps change lives.
-        </p>
+      <section className="py-24 px-6 text-center">
+        <FadeIn>
+          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-xl bg-orange-50 dark:bg-orange-500/10">
+            <Heart className="h-7 w-7 text-orange-500" />
+          </div>
+          <p className="text-xs font-semibold uppercase tracking-widest text-orange-500 mb-3">
+            Support Our Mission
+          </p>
+          <h1 className="text-3xl font-black text-gray-900 dark:text-white sm:text-4xl">
+            Make a <span className="text-orange-500">Difference</span> Today
+          </h1>
+          <p className="mx-auto mt-4 max-w-lg text-gray-500 dark:text-gray-400 leading-relaxed">
+            Your generosity helps change lives.
+          </p>
+        </FadeIn>
 
         {/* Toggle */}
-        <div className="mx-auto mt-8 inline-flex overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 shadow-sm">
-          <button
-            className={`flex items-center gap-2 px-5 py-2.5 text-sm font-medium transition ${
-              authMode === 'anonymous'
-                ? 'bg-orange-500 text-white shadow-sm'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-            }`}
-            onClick={() => setAuthMode('anonymous')}
-          >
-            <UserX className="h-4 w-4" /> Donate Anonymously
-          </button>
-          <button
-            className={`flex items-center gap-2 px-5 py-2.5 text-sm font-medium transition ${
-              authMode === 'loggedin'
-                ? 'bg-orange-500 text-white shadow-sm'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-            }`}
-            onClick={() => setAuthMode('loggedin')}
-          >
-            <User className="h-4 w-4" /> Log In to Donate
-          </button>
-        </div>
+        <FadeIn delay={120}>
+          <div className="mx-auto mt-10 inline-flex overflow-hidden rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
+            <button
+              className={`flex items-center gap-2 px-6 py-3 text-sm font-semibold transition-colors ${
+                authMode === 'anonymous'
+                  ? 'bg-orange-500 text-white'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+              onClick={() => setAuthMode('anonymous')}
+            >
+              <UserX className="h-4 w-4" /> Donate Anonymously
+            </button>
+            <button
+              className={`flex items-center gap-2 px-6 py-3 text-sm font-semibold transition-colors ${
+                authMode === 'loggedin'
+                  ? 'bg-orange-500 text-white'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+              onClick={() => setAuthMode('loggedin')}
+            >
+              <User className="h-4 w-4" /> Log In to Donate
+            </button>
+          </div>
+        </FadeIn>
       </section>
 
       {/* Login Teaser */}
       {showLoginTeaser && (
-        <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
-          <div className="grid grid-cols-1 items-center gap-8 md:grid-cols-2">
-            <div>
-              <h2 className="text-2xl font-bold">
-                More ways to give when you log in
-              </h2>
-              <p className="mt-2 text-gray-500 dark:text-gray-400">
-                Track your impact and unlock more features.
-              </p>
-            </div>
-            <div className="card space-y-3">
-              <h3 className="text-lg font-semibold">Get started</h3>
-              <button
-                className="btn-primary w-full"
-                onClick={() =>
-                  navigate('/login', { state: { returnTo: '/donate' } })
-                }
-              >
-                <LogIn className="h-4 w-4" /> Log In
-              </button>
-              <button
-                className="btn-secondary w-full"
-                onClick={() =>
-                  navigate('/register', { state: { returnTo: '/donate' } })
-                }
-              >
-                Create Account
-              </button>
-              <button
-                className="btn-ghost w-full text-gray-500"
-                onClick={() => setAuthMode('anonymous')}
-              >
-                Continue anonymously <ArrowRight className="h-4 w-4" />
-              </button>
-            </div>
+        <section className="py-24 px-6">
+          <div className="mx-auto max-w-4xl">
+            <FadeIn>
+              <div className="grid grid-cols-1 items-center gap-12 md:grid-cols-2">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-orange-500 mb-3">
+                    Unlock More
+                  </p>
+                  <h2 className="text-3xl font-black text-gray-900 dark:text-white sm:text-4xl">
+                    More ways to give when you log in
+                  </h2>
+                  <p className="mt-4 text-gray-500 dark:text-gray-400 leading-relaxed">
+                    Track your impact and unlock more features.
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 space-y-3">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Get started</h3>
+                  <button
+                    className="rounded-xl bg-orange-500 px-6 py-3 font-semibold text-white hover:bg-orange-600 transition-colors w-full inline-flex items-center justify-center gap-2"
+                    onClick={() =>
+                      navigate('/login', { state: { returnTo: '/donate' } })
+                    }
+                  >
+                    <LogIn className="h-4 w-4" /> Log In
+                  </button>
+                  <button
+                    className="btn-secondary w-full"
+                    onClick={() =>
+                      navigate('/register', { state: { returnTo: '/donate' } })
+                    }
+                  >
+                    Create Account
+                  </button>
+                  <button
+                    className="btn-ghost w-full text-gray-500"
+                    onClick={() => setAuthMode('anonymous')}
+                  >
+                    Continue anonymously <ArrowRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </FadeIn>
           </div>
-        </div>
+        </section>
       )}
 
       {/* Form */}
       {!showLoginTeaser && (
-        <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
-            {/* Left — Info */}
-            <div className="lg:col-span-3">
-              <h2 className="text-xl font-bold">Your Information</h2>
+        <section className="py-24 px-6">
+          <div className="mx-auto max-w-5xl">
+            <div className="grid grid-cols-1 gap-10 lg:grid-cols-5">
+              {/* Left -- Info */}
+              <FadeIn className="lg:col-span-3">
+                <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-6">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-orange-500 mb-3">
+                    Your Details
+                  </p>
+                  <h2 className="text-xl font-black text-gray-900 dark:text-white">Your Information</h2>
 
-              <div className="mt-6 space-y-4">
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <label className="block">
+                  <div className="mt-6 space-y-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <label className="block">
+                        <span className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                          First Name{authMode === 'anonymous' ? ' (optional)' : ''}
+                        </span>
+                        <input
+                          name="firstName"
+                          value={form.firstName}
+                          onChange={handleInput}
+                          className={`input-field ${isAuthenticated ? 'bg-gray-50 dark:bg-gray-800/50' : ''}`}
+                        />
+                        {errors.firstName && (
+                          <p className="mt-1 text-xs text-red-500">
+                            {errors.firstName}
+                          </p>
+                        )}
+                      </label>
+                      <label className="block">
+                        <span className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Last Name{authMode === 'anonymous' ? ' (optional)' : ''}
+                        </span>
+                        <input
+                          name="lastName"
+                          value={form.lastName}
+                          onChange={handleInput}
+                          className={`input-field ${isAuthenticated ? 'bg-gray-50 dark:bg-gray-800/50' : ''}`}
+                        />
+                        {errors.lastName && (
+                          <p className="mt-1 text-xs text-red-500">
+                            {errors.lastName}
+                          </p>
+                        )}
+                      </label>
+                    </div>
+                    <label className="block">
+                      <span className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Email{authMode === 'anonymous' ? ' (optional)' : ''}
+                      </span>
+                      <input
+                        name="email"
+                        value={form.email}
+                        onChange={handleInput}
+                        className={`input-field ${isAuthenticated ? 'bg-gray-50 dark:bg-gray-800/50' : ''}`}
+                        readOnly={isAuthenticated}
+                      />
+                      {errors.email && (
+                        <p className="mt-1 text-xs text-red-500">{errors.email}</p>
+                      )}
+                    </label>
+                  </div>
+
+                  <label className="mt-6 block">
                     <span className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      First Name{authMode === 'anonymous' ? ' (optional)' : ''}
+                      Notes
                     </span>
-                    <input
-                      name="firstName"
-                      value={form.firstName}
-                      onChange={handleInput}
-                      className={`input-field ${isAuthenticated ? 'bg-gray-50 dark:bg-gray-800/50' : ''}`}
+                    <textarea
+                      className="input-field resize-none"
+                      rows={4}
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
                     />
-                    {errors.firstName && (
-                      <p className="mt-1 text-xs text-red-500">
-                        {errors.firstName}
-                      </p>
-                    )}
-                  </label>
-                  <label className="block">
-                    <span className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Last Name{authMode === 'anonymous' ? ' (optional)' : ''}
-                    </span>
-                    <input
-                      name="lastName"
-                      value={form.lastName}
-                      onChange={handleInput}
-                      className={`input-field ${isAuthenticated ? 'bg-gray-50 dark:bg-gray-800/50' : ''}`}
-                    />
-                    {errors.lastName && (
-                      <p className="mt-1 text-xs text-red-500">
-                        {errors.lastName}
-                      </p>
-                    )}
                   </label>
                 </div>
-                <label className="block">
-                  <span className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Email{authMode === 'anonymous' ? ' (optional)' : ''}
-                  </span>
-                  <input
-                    name="email"
-                    value={form.email}
-                    onChange={handleInput}
-                    className={`input-field ${isAuthenticated ? 'bg-gray-50 dark:bg-gray-800/50' : ''}`}
-                    readOnly={isAuthenticated}
-                  />
-                  {errors.email && (
-                    <p className="mt-1 text-xs text-red-500">{errors.email}</p>
-                  )}
-                </label>
-              </div>
+              </FadeIn>
 
-              <label className="mt-6 block">
-                <span className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Notes
-                </span>
-                <textarea
-                  className="input-field resize-none"
-                  rows={4}
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                />
-              </label>
-            </div>
+              {/* Right -- Amount */}
+              <FadeIn className="lg:col-span-2" delay={120}>
+                <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-6">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-orange-500 mb-3">
+                    Gift Amount
+                  </p>
+                  <h3 className="text-lg font-black text-gray-900 dark:text-white">Select Amount</h3>
 
-            {/* Right — Amount */}
-            <div className="lg:col-span-2">
-              <div className="card">
-                <h3 className="text-lg font-semibold">Select Amount</h3>
+                  <div className="mt-5 grid grid-cols-3 gap-2">
+                    {AMOUNTS.map((a) => (
+                      <button
+                        key={a}
+                        className={`rounded-xl border px-3 py-2.5 text-sm font-semibold transition-colors ${
+                          amount === a && !customAmount
+                            ? 'border-orange-500 bg-orange-500 text-white'
+                            : 'border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:border-orange-300'
+                        }`}
+                        onClick={() => {
+                          setAmount(a);
+                          setCustomAmount('');
+                        }}
+                      >
+                        ${a}
+                      </button>
+                    ))}
+                  </div>
 
-                <div className="mt-4 grid grid-cols-3 gap-2">
-                  {AMOUNTS.map((a) => (
-                    <button
-                      key={a}
-                      className={`rounded-lg border px-3 py-2.5 text-sm font-semibold transition ${
-                        amount === a && !customAmount
-                          ? 'border-orange-500 bg-orange-500 text-white'
-                          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:border-orange-300'
-                      }`}
-                      onClick={() => {
-                        setAmount(a);
-                        setCustomAmount('');
+                  <div className="relative mt-4">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 dark:text-gray-500">
+                      $
+                    </span>
+                    <input
+                      type="number"
+                      placeholder="Custom amount"
+                      value={customAmount}
+                      onChange={(e) => {
+                        setCustomAmount(e.target.value);
+                        setAmount(null);
                       }}
-                    >
-                      ${a}
-                    </button>
-                  ))}
+                      className="input-field pl-7"
+                    />
+                  </div>
+
+                  {errors.amount && (
+                    <p className="mt-2 text-xs text-red-500">{errors.amount}</p>
+                  )}
+
+                  <div className="mt-6 flex items-center justify-between border-t border-gray-100 dark:border-gray-800 pt-4">
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      Total
+                    </span>
+                    <span className="text-2xl font-black text-gray-900 dark:text-white">
+                      ${finalAmount || 0}
+                    </span>
+                  </div>
+
+                  <button
+                    className="mt-4 w-full rounded-xl bg-orange-500 px-6 py-3 font-semibold text-white hover:bg-orange-600 transition-colors inline-flex items-center justify-center gap-2"
+                    onClick={handleSubmit}
+                  >
+                    Donate ${finalAmount || '\u2014'}{' '}
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
                 </div>
-
-                <div className="relative mt-4">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 dark:text-gray-500">
-                    $
-                  </span>
-                  <input
-                    type="number"
-                    placeholder="Custom amount"
-                    value={customAmount}
-                    onChange={(e) => {
-                      setCustomAmount(e.target.value);
-                      setAmount(null);
-                    }}
-                    className="input-field pl-7"
-                  />
-                </div>
-
-                {errors.amount && (
-                  <p className="mt-2 text-xs text-red-500">{errors.amount}</p>
-                )}
-
-                <div className="mt-6 flex items-center justify-between border-t border-gray-100 dark:border-gray-700 pt-4">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                    Total
-                  </span>
-                  <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                    ${finalAmount || 0}
-                  </span>
-                </div>
-
-                <button
-                  className="btn-primary mt-4 w-full"
-                  onClick={handleSubmit}
-                >
-                  Donate ${finalAmount || '\u2014'}{' '}
-                  <ArrowRight className="h-4 w-4" />
-                </button>
-              </div>
+              </FadeIn>
             </div>
           </div>
-        </div>
+        </section>
       )}
     </div>
   );

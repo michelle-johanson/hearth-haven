@@ -55,24 +55,24 @@ function ContactPage() {
   }
 
   return (
-    <div className="py-14">
+    <div className="py-20">
       <div className="mx-auto max-w-2xl px-4 sm:px-6">
-        <div className="mb-10 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-orange-50 dark:bg-orange-500/10">
-            <Mail className="h-6 w-6 text-orange-500" />
+        <div className="mb-12 text-center">
+          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-xl bg-orange-50 dark:bg-orange-500/10">
+            <Mail className="h-7 w-7 text-orange-500" />
           </div>
-          <h2 className="text-3xl font-bold">Contact Us</h2>
-          <p className="mt-2 text-gray-500 dark:text-gray-400">Send us a message and our team will respond as soon as possible.</p>
+          <h2 className="text-3xl font-black text-gray-900 dark:text-white">Contact Us</h2>
+          <p className="mt-3 text-gray-500 dark:text-gray-400 leading-relaxed">Send us a message and our team will respond as soon as possible.</p>
         </div>
 
-        <div className="card">
-          <form onSubmit={handleContactSubmit} className="space-y-5">
+        <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-6">
+          <form onSubmit={handleContactSubmit} className="space-y-6">
             <input type="hidden" name="access_key" value={web3FormsAccessKey} />
             <input type="hidden" name="from_name" value="The Hearth Project" />
             <input type="hidden" name="subject" value="New contact form submission from The Hearth Project" />
             <input type="checkbox" name="botcheck" className="hidden" tabIndex={-1} aria-hidden="true" />
 
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
               <label className="block">
                 <span className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Name</span>
                 <input type="text" name="name" placeholder="Your name" required className="input-field" />
@@ -97,7 +97,7 @@ function ContactPage() {
               <p className="text-sm text-gray-500 dark:text-gray-400">{statusMessage}</p>
             )}
 
-            <button type="submit" disabled={isSubmitting} className="btn-primary w-full">
+            <button type="submit" disabled={isSubmitting} className="rounded-xl bg-orange-500 px-6 py-3 font-semibold text-white hover:bg-orange-600 transition-colors w-full">
               {isSubmitting ? "Sending..." : "Send Message"}
             </button>
           </form>
@@ -107,12 +107,12 @@ function ContactPage() {
       {isSuccessModalOpen && (
         <div className="modal-overlay" role="dialog" aria-modal="true" onClick={() => setIsSuccessModalOpen(false)}>
           <div className="modal-body max-w-sm text-center" onClick={(e) => e.stopPropagation()}>
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-500/10">
+            <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-500/10">
               <CheckCircle className="h-7 w-7 text-emerald-500" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Message Sent</h3>
-            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{successModalMessage}</p>
-            <button className="btn-primary mt-6 w-full" onClick={() => setIsSuccessModalOpen(false)}>
+            <h3 className="text-xl font-black text-gray-900 dark:text-white">Message Sent</h3>
+            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{successModalMessage}</p>
+            <button className="rounded-xl bg-orange-500 px-6 py-3 font-semibold text-white hover:bg-orange-600 transition-colors mt-6 w-full" onClick={() => setIsSuccessModalOpen(false)}>
               Close
             </button>
           </div>

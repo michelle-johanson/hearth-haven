@@ -36,7 +36,7 @@ interface OutcomeStats {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function fmt(n: number) {
-  return '₱' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 0 });
+  return '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 0 });
 }
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
@@ -320,8 +320,9 @@ export default function ImpactDashboard() {
               transition: 'none',
             }}
           >
-            <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-orange-400">
-              Hearth Haven · Impact Report
+            <p className="mb-4 flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-widest text-orange-400">
+              <img src="/hearth-dark.png" alt="" className="h-7 w-auto" />
+              The Hearth Project · Impact Report
             </p>
             <h1 className="text-5xl font-black leading-tight text-white sm:text-6xl lg:text-7xl">
               Where Does Your
@@ -329,7 +330,7 @@ export default function ImpactDashboard() {
               <span className="text-orange-500">Money Go?</span>
             </h1>
             <p className="mx-auto mt-6 max-w-lg text-lg text-gray-400">
-              Every peso donated to Hearth Haven is tracked, allocated, and
+              Every dollar donated to The Hearth Project is tracked, allocated, and
               working — here's the full story of what your generosity makes
               possible.
             </p>
@@ -373,7 +374,7 @@ export default function ImpactDashboard() {
           value={stats.activeSafehouses}
           color="text-blue-500"
           label={<>active<br />safehouses</>}
-          description="Hearth Haven operates secure, dignified residential facilities across the Philippines where girls can escape dangerous situations and begin their journey toward stability and independence."
+          description="The Hearth Project operates secure, dignified residential facilities across Malaysia where girls can escape dangerous situations and begin their journey toward stability and independence."
           flip={true}
         />
 
@@ -492,7 +493,7 @@ export default function ImpactDashboard() {
                   Support comes in many forms.
                 </h2>
                 <p className="mt-4 text-gray-500 dark:text-gray-400 leading-relaxed">
-                  Hearth Haven is powered by more than monetary donations.
+                  The Hearth Project is powered by more than monetary donations.
                   Companies, NGOs, and community organizations can partner with
                   us through volunteer time, in-kind resources, professional
                   skills, or logistical support.
@@ -564,7 +565,7 @@ export default function ImpactDashboard() {
                 The results speak for themselves.
               </h2>
               <p className="mt-4 text-gray-400 max-w-md mx-auto">
-                Girls in Hearth Haven's care show measurable improvements across
+                Girls in The Hearth Project's care show measurable improvements across
                 every dimension of wellbeing.
               </p>
             </FadeIn>
